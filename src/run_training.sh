@@ -18,13 +18,13 @@
 
 export PATH="/homes/olsen/miniconda3/bin:$PATH"
 
-#export NCCL_P2P_DISABLE=1
+export NCCL_P2P_DISABLE=1
 #export NCCL_IB_DISABLE=1
 #export NCCL_DEBUG_SUBSYS=COLL
 #export NCCL_P2P_LEVEL=SYS
 
 # debugging flags (optional)
-export NCCL_DEBUG=INFO
+#export NCCL_DEBUG=INFO
 export PYTHONFAULTHANDLER=1
 
 #nvidia-smi topo -m
@@ -35,13 +35,13 @@ conda activate ablang-train
 #export NCCL_SOCKET_IFNAME=^docker0,lo
 #export MASTER_PORT=$((12000 + RANDOM % 20000))
 
-cd /homes/olsen/projects/AbRepTrain/src
+cd /homes/olsen/projects/ablang-train/src
 
 chmod 775 run_training.py
 srun python3 run_training.py --name ablang \
                             --mode train \
                             --gpus 1 \
-                            --num_train_epochs 10 \
+                            --num_training_steps 8500 \
                             --num_hidden_layers 4 \
-                            --dataDir /homes/olsen/multi_gpu/data/heavychain
+                            --dataDir /homes/olsen/multi_gpu/data/11022022_data
 

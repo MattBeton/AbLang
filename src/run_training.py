@@ -1,7 +1,7 @@
 import time, torch
 import numpy as np
 import pytorch_lightning as pl
-from ablang import model, tokenizers
+from ablang_pair import model, tokenizers
 
 from custom_callbacks.callback_handler import CallbackHandler
 import trainingframe, arghandler
