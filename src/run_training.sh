@@ -39,7 +39,6 @@ cd /homes/olsen/projects/ablang-train/src
 
 chmod 775 run_training.py
 srun python3 run_training.py --name ablang \
-                            --mode train \
                             --gpus 1 \
                             --num_training_steps 8500 \
                             --num_hidden_layers 4 \

@@ -11,7 +11,7 @@ class MyDataModule(pl.LightningDataModule):
     def __init__(self, hparams, tokenizer):
         super().__init__()
         self.myhparams = hparams
-        self.tokenizer = tokenizer(os.path.join(hparams.dataDir,'vocab.json'))
+        self.tokenizer = tokenizer.ABtokenizer(os.path.join(hparams.dataDir,'vocab.json'))
         
     def setup(self, stage=None): # called on every GPU
         
