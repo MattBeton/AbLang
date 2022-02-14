@@ -99,15 +99,16 @@ class TrainingFrame(pl.LightningModule):
         self.logger.experiment["evaluation/fw3_loss"].log(fw3_loss)
         self.logger.experiment["evaluation/cdr3_loss"].log(cdr3_loss)
         self.logger.experiment["evaluation/fw4_loss"].log(fw4_loss)
-        
-        if self.hparams.chain == 'light':
-            testSeq = 'DIVMTQTPSTLSASVGDRVTLTCKASQDISYLAWYQQKPGKAPKKLIYAASSLQSGVPSRFSGSGSGTDFTLTISSLQPEDFATYYCLQQNSNWTFGQGTKVDIK'
-        else:
-            testSeq = 'EVQLVESGPGLVQPGKSLRLSCVASGFTFSGYGMHWVRQAPGKGLEWIALIIYDESNKYYADSVKGRFTISRDNSKNTLYLQMSSLRAEDTAVFYCAKVKFYDPTAPNDYWGQGTLVTVSS'
-        
+
+        testSeq = 'EVQLVESGPGLVQPGKSLRLSCVASGFTFSGYGMHWVRQAPGKGLEWIALIIYDESNKYYADSVKGRFTISRDNSKNTLYLQMSSLRAEDTAVFYCAKVKFYDPTAPNDYWGQGTLVTVSS|'
         aaPreds, aaPreds50 = singleSeqValidation(self, self.tokenizer, testSeq=testSeq)       
-        self.logger.experiment['evaluation/reconstruct'].log(aaPreds[0])
-        self.logger.experiment['evaluation/reconstruct_50'].log(aaPreds50[0])
+        self.logger.experiment['evaluation/heavy_reconstruct'].log(aaPreds[0])
+        self.logger.experiment['evaluation/heavy_reconstruct_50'].log(aaPreds50[0])
+        
+        testSeq = '|DIVMTQTPSTLSASVGDRVTLTCKASQDISYLAWYQQKPGKAPKKLIYAASSLQSGVPSRFSGSGSGTDFTLTISSLQPEDFATYYCLQQNSNWTFGQGTKVDIK'
+        aaPreds, aaPreds50 = singleSeqValidation(self, self.tokenizer, testSeq=testSeq)       
+        self.logger.experiment['evaluation/light_reconstruct'].log(aaPreds[0])
+        self.logger.experiment['evaluation/light_reconstruct_50'].log(aaPreds50[0])
     
     def configure_optimizers(self):
         """
