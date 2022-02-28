@@ -76,9 +76,9 @@ class AbHead(torch.nn.Module):
     def __init__(self, hparams, weights):
         super().__init__()
 
-        self.dense = nn.Linear(hparams.hidden_size, hparams.hidden_size)
+        self.dense = nn.Linear(hparams.representation_size, hparams.representation_size)
         self.activation = ACT2FN[hparams.hidden_act]
-        self.layer_norm = nn.LayerNorm(hparams.hidden_size, eps=hparams.layer_norm_eps)
+        self.layer_norm = nn.LayerNorm(hparams.representation_size, eps=hparams.layer_norm_eps)
 
         self.weight = weights
         self.bias = nn.Parameter(torch.zeros(hparams.vocab_size))

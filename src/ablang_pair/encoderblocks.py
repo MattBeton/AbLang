@@ -27,8 +27,8 @@ class EncoderBlocks(torch.nn.Module):
     def __init__(self, hparams):
         super().__init__()
         self.hparams = hparams
-        self.Layers = nn.ModuleList([TransformerEncoder(hparams) for _ in range(hparams.num_hidden_layers)])
-        self.LayerNorm = nn.LayerNorm(hparams.hidden_size, eps=hparams.layer_norm_eps)
+        self.Layers = nn.ModuleList([TransformerEncoder(hparams) for _ in range(hparams.num_encoder_blocks)])
+        self.LayerNorm = nn.LayerNorm(hparams.representation_size, eps=hparams.layer_norm_eps)
 
     def forward(self, hidden_states, attention_mask=None, output_attentions=False, output_hidden_states=False):
         
@@ -79,13 +79,13 @@ class MultiHeadAttention(torch.nn.Module):
     def __init__(self, hparams):
         super().__init__()
                 
-        self.Attention = MultiheadAttention(hparams.hidden_size, 
+        self.Attention = MultiheadAttention(hparams.representation_size, 
                                             hparams.num_attention_heads, 
-                                            dropout=hparams.attention_probs_dropout_prob, 
+                                            dropout=hparams.attention_dropout_prob, 
                                             self_attention=True)
         
-        self.MHADropout = nn.Dropout(hparams.hidden_dropout_prob)
-        self.MHALayerNorm = nn.LayerNorm(hparams.hidden_size, eps=hparams.layer_norm_eps)
+        self.MHADropout = nn.Dropout(hparams.representation_dropout_prob)
+        self.MHALayerNorm = nn.LayerNorm(hparams.representation_size, eps=hparams.layer_norm_eps)
         
         
     def forward(self, hidden_states, attention_mask=None, output_attentions=False):
@@ -115,16 +115,16 @@ class IntermediateLayer(nn.Module):
     """
     Contains an expanding layer, while also functioning as a residual block ending with a drop-norm layer
     """
-    def __init__(self, config):
+    def __init__(self, hparams):
         super().__init__()
-        self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
+        self.LayerNorm = nn.LayerNorm(hparams.representation_size, eps=hparams.layer_norm_eps)
         
-        self.expand_dense = nn.Linear(config.hidden_size, config.intermediate_size)
-        self.intermediate_act_fn = ACT2FN[config.hidden_act]
-        self.inner_dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.dense_dense = nn.Linear(config.intermediate_size, config.hidden_size)
+        self.expand_dense = nn.Linear(hparams.representation_size, hparams.intermediate_size)
+        self.intermediate_act_fn = ACT2FN[hparams.hidden_act]
+        self.inner_dropout = nn.Dropout(hparams.representation_dropout_prob)
+        self.dense_dense = nn.Linear(hparams.intermediate_size, hparams.representation_size)
         
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        self.dropout = nn.Dropout(hparams.representation_dropout_prob)
         
 
     def forward(self, hidden_states):

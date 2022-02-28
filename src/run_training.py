@@ -1,11 +1,12 @@
-import time, torch
+import torch
 import numpy as np
 import pytorch_lightning as pl
 from ablang_pair import model, tokenizers
 
 from custom_callbacks.callback_handler import CallbackHandler
-import trainingframe, arghandler
+import trainingframe
 from data_handling import datamodule
+from initialization import arghandler
 
     
 def enforce_reproducibility(seed=42):
@@ -27,31 +28,30 @@ def enforce_reproducibility(seed=42):
 if __name__ == '__main__':
     
     # SET ARGUMENTS AND HPARAMS
-    trainer_args, hparams = arghandler.parse_args()
+    arguments = arghandler.parse_args()
     
     # SET CALLBACKS
-    callbacks = CallbackHandler(n_steps=100, progress_refresh_rate=0, outpath=hparams.outpath)
+    callbacks = CallbackHandler(n_steps=arguments.model_specific_args.val_check_interval, 
+                                progress_refresh_rate=0, 
+                                outpath=arguments.model_specific_args.out_path)
     
     # SET SEED - IMPORTANT FOR MULTIPLE GPUS, OTHERWISE GOOD FOR REPRODUCIBILITY
-    enforce_reproducibility(hparams.seed)
+    enforce_reproducibility(arguments.model_specific_args.seed)
     
     # LOAD AND INITIATE DATA
-    abrep_dm = datamodule.MyDataModule(hparams, tokenizers) 
+    abrep_dm = datamodule.MyDataModule(arguments.model_specific_args, tokenizers) 
     # You are supposed to just be able to add abrep to the fit function, but it doesn't work when using multiple GPUs
     abrep_dm.setup('fit')
-    
+
     train = abrep_dm.train_dataloader()
     val = abrep_dm.val_dataloader()
     
     # LOAD MODEL
-    model = trainingframe.TrainingFrame(hparams, model, tokenizers)
-    
+    model = trainingframe.TrainingFrame(arguments.model_specific_args, model, tokenizers)
+
     # INITIALISE TRAINER
-    trainer = pl.Trainer(**trainer_args, callbacks=callbacks())
-    
-    start_time = time.time()
+    trainer = pl.Trainer(**arguments.trainer_args, callbacks=callbacks())
+
     # TRAIN MODEL
     trainer.fit(model, train, val)
-    
-    print(time.time()-start_time)
     

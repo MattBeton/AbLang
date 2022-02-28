@@ -14,7 +14,7 @@ class CallbackHandler:
         
         self.callbacks.append(LearningRateMonitor(logging_interval='step'))
         
-        self.callbacks.append(ModelCheckpoint(save_last=True, save_top_k=0, dirpath=outpath))  #, dirpath=outpath
+        self.callbacks.append(ModelCheckpoint(save_last=False, save_top_k=0, dirpath=outpath))  #, dirpath=outpath
         
         self.callbacks.append(CheckpointEveryNSteps(n_steps))
  

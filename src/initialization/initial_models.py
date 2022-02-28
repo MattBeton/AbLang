@@ -1,0 +1,55 @@
+from distutils.util import strtobool
+
+import pytorch_lightning as pl
+
+
+class AbLangPaired_v1(pl.LightningModule):
+    @staticmethod
+    def add_model_specific_args(parent_parser):
+        parser = parent_parser.add_argument_group("AbLangPaired")
+        
+        parser.add_argument('--max_position_embeddings', type=int, default=300)
+
+        parser.add_argument('--num_encoder_blocks', type=int, default=1, help='Number of encoder blocks.')
+        parser.add_argument('--representation_size', type=int, default=768, help='Representation (hidden) size.')
+        parser.add_argument('--intermediate_size', type=int, default=4*768, help='Intermediate (hidden) size.')
+        parser.add_argument('--num_attention_heads', type=int, default=12)
+        parser.add_argument('--attention_dropout_prob', type=float, default=0.1)
+        parser.add_argument('--hidden_act', type=str, default="gelu")
+        parser.add_argument('--representation_dropout_prob', type=float, default=0.1)
+
+        parser.add_argument('--adam_epsilon', type=float, default=1e-7, help='Adam Epsilon.')
+        parser.add_argument('--mask_percent', type=float, default=0.25, help='Percentage to mask.')
+        parser.add_argument('--variable_masking', type=strtobool, default=True, help='Random uniform masking between 0 and mask_percent for each batch.')
+        
+        
+        parser.add_argument('--initializer_range', type=float, default=0.02)
+        parser.add_argument('--layer_norm_eps', type=float, default=1e-12)
+        parser.add_argument('--weight_decay', type=float, default=0.01)
+        parser.add_argument('--adam_betas', default=[0.9,0.98])
+
+        #max_grad_norm: 1
+        #hparams.sync_batchnorm=True # Slower training, but might improve training
+        
+        return parent_parser
+    
+    
+    @staticmethod
+    def add_training_specific_args(parent_parser):
+        parser = parent_parser.add_argument_group("AbLangPaired")
+        parser.add_argument("--data_path", type=str, default='../data/11022022_data')
+        parser.add_argument('--out_path', type=str, default="/data/iraqbabbler/olsen/Documents/projects/AbLang/train_ablang_paired/reports")
+
+
+        parser.add_argument('--max_fit_batch_size', type=int, default=256, help='Max batch size that fits in GPU memory.')
+        parser.add_argument('--effective_batch_size', type=int, default=4_096*2, help='Effective batch size - The real batch size.')
+        parser.add_argument('--num_training_steps', type=int, default=1000, help='Number of training steps.')
+        parser.add_argument('--learning_rate', type=float, default=2e-04, help='Learning rate')
+        parser.add_argument('--cdr3_focus', type=float, default=1, help='Used to increase the chance of masking the CDR3 region. \
+                                                                        1 is same as other residues, \
+                                                                        2 is 2 times the chance, \
+                                                                        3 is 3 times the chance, etc..')
+        parser.add_argument('--seed', type=int, default=42, help='Random seed.')
+        parser.add_argument('--eval_batch_size', type=int, default=10_000)
+        
+        return parent_parser

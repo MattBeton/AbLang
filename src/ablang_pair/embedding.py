@@ -10,11 +10,19 @@ class AbEmbeddings(nn.Module):
         super().__init__()
         self.pad_token_id = hparams.pad_token_id
         
-        self.AAEmbeddings = nn.Embedding(hparams.vocab_size, hparams.hidden_size, padding_idx=self.pad_token_id)
-        self.PositionEmbeddings = nn.Embedding(hparams.max_position_embeddings, hparams.hidden_size, padding_idx=0) # here padding_idx is always 0
+        self.AAEmbeddings = nn.Embedding(hparams.vocab_size, 
+                                         hparams.representation_size, 
+                                         padding_idx=self.pad_token_id
+                                        )
+        self.PositionEmbeddings = nn.Embedding(hparams.max_position_embeddings, 
+                                               hparams.representation_size, 
+                                               padding_idx=0 # here padding_idx is always 0
+                                              ) 
         
-        self.LayerNorm = nn.LayerNorm(hparams.hidden_size, eps=hparams.layer_norm_eps)
-        self.Dropout = nn.Dropout(hparams.hidden_dropout_prob)
+        self.LayerNorm = nn.LayerNorm(hparams.representation_size, 
+                                      eps=hparams.layer_norm_eps
+                                     )
+        self.Dropout = nn.Dropout(hparams.representation_dropout_prob)
 
     def forward(self, src):
         
