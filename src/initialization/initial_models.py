@@ -37,7 +37,7 @@ class AbLangPaired_v1(pl.LightningModule):
     @staticmethod
     def add_training_specific_args(parent_parser):
         parser = parent_parser.add_argument_group("AbLangPaired")
-        parser.add_argument("--data_path", type=str, default='../data/11022022_data')
+        parser.add_argument("--data_path", type=str, default='../data/feb2022_5_data')
         parser.add_argument('--out_path', type=str, default="/data/iraqbabbler/olsen/Documents/projects/AbLang/train_ablang_paired/reports")
 
 
