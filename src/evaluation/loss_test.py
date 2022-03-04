@@ -32,6 +32,11 @@ def log_restoring_sequence(self):
     aaPreds, aaPreds50 = singleSeqValidation(self, self.tokenizer, testSeq=testSeq)       
     self.logger.experiment['evaluation/light_reconstruct'].log(aaPreds[0])
     self.logger.experiment['evaluation/light_reconstruct_50'].log(aaPreds50[0])
+    
+    testSeq = 'EVQLVESGPGLVQPGKSLRLSCVASGFTFSGYGMHWVRQAPGKGLEWIALIIYDESNKYYADSVKGRFTISRDNSKNTLYLQMSSLRAEDTAVFYCAKVKFYDPTAPNDYWGQGTLVTVSS|DIVMTQTPSTLSASVGDRVTLTCKASQDISYLAWYQQKPGKAPKKLIYAASSLQSGVPSRFSGSGSGTDFTLTISSLQPEDFATYYCLQQNSNWTFGQGTKVDIK'
+    aaPreds, aaPreds50 = singleSeqValidation(self, self.tokenizer, testSeq=testSeq)       
+    self.logger.experiment['evaluation/paired_reconstruct'].log(aaPreds[0])
+    self.logger.experiment['evaluation/paired_reconstruct_50'].log(aaPreds50[0])
         
         
 def singleSeqValidation(model, tokenizer, testSeq):
