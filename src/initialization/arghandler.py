@@ -83,6 +83,9 @@ class PrepareArguments:
     def set_gpus_settings(self):
         """
         Hyparameters scale weirdly with gpus. This function is to adjust them based on gpu_counts.
+        
+        The following link provides a discussion for setting effective batch size and learning rate:
+        https://forums.pytorchlightning.ai/t/effective-learning-rate-and-batch-size-with-lightning-in-ddp/101/8
         """
 
         gpu_batch_size = self.args.effective_batch_size // self.args.gpu_count # Spread effective batch size across GPUs and gradient accumulation
@@ -96,8 +99,8 @@ class PrepareArguments:
         self.args.train_batch_size = self.args.max_fit_batch_size  # We set the training batch size to be the max possible batch size
         self.args.max_steps = self.args.num_training_steps  # We set the training batch size to be the max possible steps
 
-        # You LR*(gradient/gpus), and therefore you need to divide your given LR with the number of gpus to get the effective LR
-        self.args.learning_rate = self.args.learning_rate / self.args.gpu_count 
+        # You LR*(gradient/gpus), and therefore you need to multiply your given LR with the number of gpus to get the effective LR
+        self.args.learning_rate = self.args.learning_rate #/ self.args.gpu_count 
 
         self.args.warmup_steps = int(self.args.max_steps * 0.05)
         
