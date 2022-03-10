@@ -66,7 +66,7 @@ if __name__ == '__main__':
     model = trainingframe.TrainingFrame(arguments.model_specific_args, model, tokenizers)
 
     # INITIALISE TRAINER
-    trainer = pl.Trainer(**arguments.trainer_args, logger=logger, callbacks=callbacks())
+    trainer = pl.Trainer(**arguments.trainer_args, callbacks=callbacks())
 
     # TRAIN MODEL
     trainer.fit(model, train, val)
