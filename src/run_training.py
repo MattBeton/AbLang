@@ -4,6 +4,7 @@ import pytorch_lightning as pl
 from ablang_pair import model, tokenizers
 
 from custom_callbacks.callback_handler import CallbackHandler
+from pytorch_lightning.loggers.neptune import NeptuneLogger
 import trainingframe
 from data_handling import datamodule
 from initialization import arghandler
@@ -23,12 +24,27 @@ def enforce_reproducibility(seed=42):
     np.random.seed(seed)
     
     pl.seed_everything(seed)
+    
+def set_neptune_logger(args):
+        """
+        Initialize Neptune logger
+        """
+
+        neptune_args = { 'api_key':"eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiZmVhYTY2NzAtOGUxYS00NWFlLWI0MDQtZjM5ODBmYmNkMjA3In0=",
+        'project':"tobiasheol/AbLangTraining",
+        'name':args.name,
+        'log_model_checkpoints':False,
+        }
+        
+        return NeptuneLogger(**neptune_args)
 
 
 if __name__ == '__main__':
     
     # SET ARGUMENTS AND HPARAMS
     arguments = arghandler.parse_args()
+    logger = set_neptune_logger(arguments.model_specific_args)
+    arguments.trainer_args['logger'] = logger
     
     # SET CALLBACKS
     callbacks = CallbackHandler(n_steps=arguments.model_specific_args.val_check_interval, 
@@ -50,7 +66,7 @@ if __name__ == '__main__':
     model = trainingframe.TrainingFrame(arguments.model_specific_args, model, tokenizers)
 
     # INITIALISE TRAINER
-    trainer = pl.Trainer(**arguments.trainer_args, callbacks=callbacks())
+    trainer = pl.Trainer(**arguments.trainer_args, logger=logger, callbacks=callbacks())
 
     # TRAIN MODEL
     trainer.fit(model, train, val)

@@ -103,19 +103,6 @@ class PrepareArguments:
         self.args.learning_rate = self.args.learning_rate #/ self.args.gpu_count 
 
         self.args.warmup_steps = int(self.args.max_steps * 0.05)
-        
-    def set_neptune_logger(self):
-        """
-        Initialize Neptune logger
-        """
-
-        neptune_args = { 'api_key':"eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiZmVhYTY2NzAtOGUxYS00NWFlLWI0MDQtZjM5ODBmYmNkMjA3In0=",
-        'project':"tobiasheol/AbLangTraining",
-        'name':self.args.name,
-        'log_model_checkpoints':False,
-        }
-        
-        self.args.logger = NeptuneLogger(**neptune_args)
 
     def set_trainer_args(self):
         """
@@ -129,7 +116,7 @@ class PrepareArguments:
         for key, value in trainer_args.items():
             trainer_args[key] = hparamstmp[key]
         
-        trainer_args['logger'] = self.args.logger
+        #trainer_args['logger'] = self.args.logger
         
         self.trainer_args = trainer_args
         
@@ -139,7 +126,7 @@ class PrepareArguments:
         self.set_vocab_args()
         self.set_gpus()
         self.set_gpus_settings()
-        self.set_neptune_logger()
+        #self.set_neptune_logger()
         self.set_trainer_args()
         
         return ModelArguments(program_args='', trainer_args=self.trainer_args, model_specific_args=self.args)
