@@ -30,7 +30,7 @@ def set_neptune_logger(args):
         Initialize Neptune logger
         """
 
-        neptune_args = { 'api_key':"eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiZmVhYTY2NzAtOGUxYS00NWFlLWI0MDQtZjM5ODBmYmNkMjA3In0=",
+        neptune_args = { 'api_key':"eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI0N2Y2YmIxMS02OWM3LTRhY2MtYTQxOC0xODU5N2E0ODFmMzEifQ==",
         'project':"tobiasheol/AbLangTraining",
         'name':args.name,
         'log_model_checkpoints':False,
