@@ -40,10 +40,8 @@ class TrainingFrame(pl.LightningModule):
 
         loss = self.loss_fn(output.view(-1, self.hparams.vocab_size), labels)
         
-        print(self.global_step)
-        
         # Must clear cache at regular interval
-        if self.global_step % 10 == 0:
+        if self.global_step % 5 == 0:
             torch.cuda.empty_cache()
             
         # Only log once every global step
