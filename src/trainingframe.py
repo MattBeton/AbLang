@@ -81,8 +81,8 @@ class TrainingFrame(pl.LightningModule):
     def validation_epoch_end(self, val_step_outputs): # Updated once when validation is called
         
         
-        log_valuation_loss(self, val_step_outputs)
-        log_restoring_sequence(self)
+        self.log_valuation_loss(val_step_outputs)
+        self.log_restoring_sequence()
         
         self.Evaluations(self)
 
@@ -121,46 +121,42 @@ class TrainingFrame(pl.LightningModule):
         }
 
 
+    def log_valuation_loss(self, val_step_outputs):
 
-    
-    
-def log_valuation_loss(self, val_step_outputs):
+        val_loss = torch.stack([x['val_loss'] for x in val_step_outputs]).mean()
+        fw1_loss = torch.stack([x['fw1_loss'] for x in val_step_outputs]).mean()
+        cdr1_loss = torch.stack([x['cdr1_loss'] for x in val_step_outputs]).mean()
+        fw2_loss = torch.stack([x['fw2_loss'] for x in val_step_outputs]).mean()
+        cdr2_loss = torch.stack([x['cdr2_loss'] for x in val_step_outputs]).mean()
+        fw3_loss = torch.stack([x['fw3_loss'] for x in val_step_outputs]).mean()
+        cdr3_loss = torch.stack([x['cdr3_loss'] for x in val_step_outputs]).mean()
+        fw4_loss = torch.stack([x['fw4_loss'] for x in val_step_outputs]).mean()
+
+        self.logger.experiment["evaluation/eval_loss"].log(val_loss)
+        self.logger.experiment["evaluation/fw1_loss"].log(fw1_loss)
+        self.logger.experiment["evaluation/cdr1_loss"].log(cdr1_loss)
+        self.logger.experiment["evaluation/fw2_loss"].log(fw2_loss)
+        self.logger.experiment["evaluation/cdr2_loss"].log(cdr2_loss)
+        self.logger.experiment["evaluation/fw3_loss"].log(fw3_loss)
+        self.logger.experiment["evaluation/cdr3_loss"].log(cdr3_loss)
+        self.logger.experiment["evaluation/fw4_loss"].log(fw4_loss)
 
 
-    val_loss = torch.stack([x['val_loss'] for x in val_step_outputs]).mean()
-    fw1_loss = torch.stack([x['fw1_loss'] for x in val_step_outputs]).mean()
-    cdr1_loss = torch.stack([x['cdr1_loss'] for x in val_step_outputs]).mean()
-    fw2_loss = torch.stack([x['fw2_loss'] for x in val_step_outputs]).mean()
-    cdr2_loss = torch.stack([x['cdr2_loss'] for x in val_step_outputs]).mean()
-    fw3_loss = torch.stack([x['fw3_loss'] for x in val_step_outputs]).mean()
-    cdr3_loss = torch.stack([x['cdr3_loss'] for x in val_step_outputs]).mean()
-    fw4_loss = torch.stack([x['fw4_loss'] for x in val_step_outputs]).mean()
+    def log_restoring_sequence(self):
+        testSeq = 'EVQLVESGPGLVQPGKSLRLSCVASGFTFSGYGMHWVRQAPGKGLEWIALIIYDESNKYYADSVKGRFTISRDNSKNTLYLQMSSLRAEDTAVFYCAKVKFYDPTAPNDYWGQGTLVTVSS|'
+        aaPreds, aaPreds50 = singleSeqValidation(self, self.tokenizer, testSeq=testSeq)       
+        self.logger.experiment['evaluation/heavy_reconstruct'].log(aaPreds[0])
+        self.logger.experiment['evaluation/heavy_reconstruct_50'].log(aaPreds50[0])
 
-    self.logger.experiment["evaluation/eval_loss"].log(val_loss)
-    self.logger.experiment["evaluation/fw1_loss"].log(fw1_loss)
-    self.logger.experiment["evaluation/cdr1_loss"].log(cdr1_loss)
-    self.logger.experiment["evaluation/fw2_loss"].log(fw2_loss)
-    self.logger.experiment["evaluation/cdr2_loss"].log(cdr2_loss)
-    self.logger.experiment["evaluation/fw3_loss"].log(fw3_loss)
-    self.logger.experiment["evaluation/cdr3_loss"].log(cdr3_loss)
-    self.logger.experiment["evaluation/fw4_loss"].log(fw4_loss)
+        testSeq = '|DIVMTQTPSTLSASVGDRVTLTCKASQDISYLAWYQQKPGKAPKKLIYAASSLQSGVPSRFSGSGSGTDFTLTISSLQPEDFATYYCLQQNSNWTFGQGTKVDIK'
+        aaPreds, aaPreds50 = singleSeqValidation(self, self.tokenizer, testSeq=testSeq)       
+        self.logger.experiment['evaluation/light_reconstruct'].log(aaPreds[0])
+        self.logger.experiment['evaluation/light_reconstruct_50'].log(aaPreds50[0])
 
-    
-def log_restoring_sequence(self):
-    testSeq = 'EVQLVESGPGLVQPGKSLRLSCVASGFTFSGYGMHWVRQAPGKGLEWIALIIYDESNKYYADSVKGRFTISRDNSKNTLYLQMSSLRAEDTAVFYCAKVKFYDPTAPNDYWGQGTLVTVSS|'
-    aaPreds, aaPreds50 = singleSeqValidation(self, self.tokenizer, testSeq=testSeq)       
-    self.logger.experiment['evaluation/heavy_reconstruct'].log(aaPreds[0])
-    self.logger.experiment['evaluation/heavy_reconstruct_50'].log(aaPreds50[0])
-
-    testSeq = '|DIVMTQTPSTLSASVGDRVTLTCKASQDISYLAWYQQKPGKAPKKLIYAASSLQSGVPSRFSGSGSGTDFTLTISSLQPEDFATYYCLQQNSNWTFGQGTKVDIK'
-    aaPreds, aaPreds50 = singleSeqValidation(self, self.tokenizer, testSeq=testSeq)       
-    self.logger.experiment['evaluation/light_reconstruct'].log(aaPreds[0])
-    self.logger.experiment['evaluation/light_reconstruct_50'].log(aaPreds50[0])
-    
-    testSeq = 'EVQLVESGPGLVQPGKSLRLSCVASGFTFSGYGMHWVRQAPGKGLEWIALIIYDESNKYYADSVKGRFTISRDNSKNTLYLQMSSLRAEDTAVFYCAKVKFYDPTAPNDYWGQGTLVTVSS|DIVMTQTPSTLSASVGDRVTLTCKASQDISYLAWYQQKPGKAPKKLIYAASSLQSGVPSRFSGSGSGTDFTLTISSLQPEDFATYYCLQQNSNWTFGQGTKVDIK'
-    aaPreds, aaPreds50 = singleSeqValidation(self, self.tokenizer, testSeq=testSeq)       
-    self.logger.experiment['evaluation/paired_reconstruct'].log(aaPreds[0])
-    self.logger.experiment['evaluation/paired_reconstruct_50'].log(aaPreds50[0])
+        testSeq = 'EVQLVESGPGLVQPGKSLRLSCVASGFTFSGYGMHWVRQAPGKGLEWIALIIYDESNKYYADSVKGRFTISRDNSKNTLYLQMSSLRAEDTAVFYCAKVKFYDPTAPNDYWGQGTLVTVSS|DIVMTQTPSTLSASVGDRVTLTCKASQDISYLAWYQQKPGKAPKKLIYAASSLQSGVPSRFSGSGSGTDFTLTISSLQPEDFATYYCLQQNSNWTFGQGTKVDIK'
+        aaPreds, aaPreds50 = singleSeqValidation(self, self.tokenizer, testSeq=testSeq)       
+        self.logger.experiment['evaluation/paired_reconstruct'].log(aaPreds[0])
+        self.logger.experiment['evaluation/paired_reconstruct_50'].log(aaPreds50[0])
         
         
 def singleSeqValidation(model, tokenizer, testSeq):
