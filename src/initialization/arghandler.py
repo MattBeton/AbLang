@@ -22,6 +22,9 @@ def parse_args(args=None, is_test=False):
     parser.add_argument('--cpus', type=int, default=1, help='Number of cpus to use on data handling (4xGPUs is the recommended). \
                                                                     0 uses the main process to load the data.')
     
+    
+    parser.add_argument('--mask_technique', type=str, default="random", help='masking technique to use. {standard, standard-sl_mask}')
+    
     parser = AbLangPaired_v1.add_model_specific_args(parser)
     parser = AbLangPaired_v1.add_training_specific_args(parser)
     
@@ -56,11 +59,10 @@ class PrepareArguments:
         with open(os.path.join(self.args.data_path, 'vocab.json')) as vocab_file: 
             vocab = json.load(vocab_file)
             
-        self.args.pad_token_id = vocab['-']
-        self.args.start_token_id = vocab['<']
-        self.args.stop_token_id = vocab['>']
-        self.args.mask_token_id = vocab['*']
-        self.args.split_token_id = vocab['|']
+        self.args.pad_tkn = vocab['-']
+        self.args.cls_tkn = vocab['<']
+        self.args.sep_tkn = vocab['>']
+        self.args.mask_tkn = vocab['*']
         self.args.vocab_size = len(vocab)
 
     def set_gpus(self):

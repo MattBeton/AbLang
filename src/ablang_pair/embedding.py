@@ -8,11 +8,11 @@ class AbEmbeddings(nn.Module):
     
     def __init__(self, hparams):
         super().__init__()
-        self.pad_token_id = hparams.pad_token_id
+        self.pad_tkn = hparams.pad_tkn
         
         self.AAEmbeddings = nn.Embedding(hparams.vocab_size, 
                                          hparams.representation_size, 
-                                         padding_idx=self.pad_token_id
+                                         padding_idx=self.pad_tkn
                                         )
         self.PositionEmbeddings = nn.Embedding(hparams.max_position_embeddings, 
                                                hparams.representation_size, 
@@ -39,7 +39,7 @@ class AbEmbeddings(nn.Module):
         """
         Replace non-padding symbols with their position numbers. Padding idx will get position 0, which will be ignored later on.
         """
-        mask = input_ids.ne(self.pad_token_id).int()
+        mask = input_ids.ne(self.pad_tkn).int()
         
         return cumsum(mask, dim=1).long() * mask
     

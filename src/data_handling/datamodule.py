@@ -12,18 +12,27 @@ class MyDataModule(pl.LightningDataModule):
         super().__init__()
         self.data_hparams = data_hparams
         self.tokenizer = tokenizer.ABtokenizer(os.path.join(data_hparams.data_path,'vocab.json'))
+
+        
         
     def setup(self, stage=None): # called on every GPU
         
         self.traincollater = ABcollator(self.tokenizer, 
-                                        pad_to_mask=self.data_hparams.pad_token_id, 
+                                        pad_tkn=self.data_hparams.pad_tkn,
+                                        cls_tkn=self.data_hparams.cls_tkn, 
+                                        sep_tkn=self.data_hparams.sep_tkn,
+                                        mask_tkn=self.data_hparams.mask_tkn,
                                         mask_percent=self.data_hparams.mask_percent,
                                         mask_variable=self.data_hparams.variable_masking,
-                                        cdr3_focus=self.data_hparams.cdr3_focus
+                                        cdr3_focus=self.data_hparams.cdr3_focus,
+                                        mask_technique=self.data_hparams.mask_technique,
                                        )
         
         self.evalcollater = ABcollator(self.tokenizer, 
-                                       pad_to_mask=self.data_hparams.pad_token_id, 
+                                       pad_tkn=self.data_hparams.pad_tkn,
+                                        cls_tkn=self.data_hparams.cls_tkn, 
+                                        sep_tkn=self.data_hparams.sep_tkn,
+                                        mask_tkn=self.data_hparams.mask_tkn, 
                                        mask_percent=0,
                                        mask_variable=False,
                                        cdr3_focus=1
@@ -55,12 +64,12 @@ class MyDataModule(pl.LightningDataModule):
         "Reads txt file of sequences."
         
         with open(os.path.join(file_path,'heavy_chains.txt'), encoding="utf-8") as f:
-            heavychain = [line + '|' for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
+            heavychain = [line + '>' for line in f.read().splitlines()[:10000] if (len(line) > 0 and not line.isspace())]
         
         with open(os.path.join(file_path,'light_chains.txt'), encoding="utf-8") as f:
-            lightchain = ['|' + line for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
+            lightchain = ['>' + line for line in f.read().splitlines()[:10000] if (len(line) > 0 and not line.isspace())]
         
         with open(os.path.join(file_path,'paired_chains.txt'), encoding="utf-8") as f:
-            pairedchain = [line for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
+            pairedchain = [line.replace('|','>') for line in f.read().splitlines()[:10000] if (len(line) > 0 and not line.isspace())]
             
         return heavychain + lightchain + pairedchain

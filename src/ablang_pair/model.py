@@ -44,7 +44,7 @@ class AbRep(torch.nn.Module):
         
     def forward(self, src, attention_mask=None, output_attentions=False):
         
-        attention_mask = torch.zeros(*src.shape, device=src.device).masked_fill(src == self.hparams.pad_token_id, 1)
+        attention_mask = torch.zeros(*src.shape, device=src.device).masked_fill(src == self.hparams.pad_tkn, 1)
 
         src = self.AbEmbeddings(src)
         
