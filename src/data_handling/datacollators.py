@@ -59,7 +59,7 @@ class ABcollator():
                                                                   mask_technique = mask_technique
                                                                  )
         
-        return {'input':changed_data, 'labels':new_targets.view(-1), 'attention_mask':data_mask}
+        return {'input':changed_data, 'labels':new_targets.view(-1), 'attention_mask':data_mask, 'sequences':batch}
 
 
 def create_stop_start_data(data, 

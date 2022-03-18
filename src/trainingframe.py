@@ -58,6 +58,8 @@ class TrainingFrame(pl.LightningModule):
         
         data, labels = dataset['input'], dataset['labels']
         
+        pp_score = calculate_perplexity(self, self.tokenizer, dataset['sequences'][:10])
+        
         output = self(data, attention_mask=None)
         
         loss = self.val_loss_fn(output.view(-1, self.hparams.vocab_size), labels)
@@ -70,14 +72,19 @@ class TrainingFrame(pl.LightningModule):
         cdr2_loss = all_loss[:, 56:65+1].mean()
         fw3_loss = all_loss[:, 65:105+1].mean()
         cdr3_loss = all_loss[:, 105:117+1].mean()
-        fw4_loss = all_loss[:, 117:].sum() / (len(all_loss[:, 117:].reshape(-1)) - (labels == -100).sum())
+        fw4_loss = all_loss[:, 117:].mean()
 
-        return {'val_loss': loss, 'fw1_loss':fw1_loss, 'cdr1_loss':cdr1_loss, 'fw2_loss':fw2_loss, 
-                'cdr2_loss':cdr2_loss, 'fw3_loss':fw3_loss, 'cdr3_loss':cdr3_loss, 'fw4_loss':fw4_loss}
+        return {
+            'val_loss': loss, 'fw1_loss':fw1_loss, 'cdr1_loss':cdr1_loss, 'fw2_loss':fw2_loss, 
+            'cdr2_loss':cdr2_loss, 'fw3_loss':fw3_loss, 'cdr3_loss':cdr3_loss, 'fw4_loss':fw4_loss,
+            'pp_score':pp_score,
+               }
     
     
     def validation_epoch_end(self, val_step_outputs): # Updated once when validation is called
         
+        pp_score = torch.stack([x['pp_score'] for x in val_step_outputs]).mean()
+        self.logger.experiment["evaluation/pp_score"].log(pp_score)
         
         self.log_valuation_loss(val_step_outputs)
         self.log_restoring_sequence()
@@ -173,3 +180,22 @@ def singleSeqValidation(model, tokenizer, testSeq):
     aaPreds50 = ['-'.join(tokenizer(torch.where(tokenMAX[0]<=.5, unkMatrix, tokenMAX[1]).detach(), encode=False)[0].split('<unk>'))]
 
     return aaPreds, aaPreds50
+
+
+def calculate_perplexity(model, tokenizer, sentences,  mask_token_id=23):
+    tensor_input = model.tokenizer(sentences, pad=True)
+    
+    repeat_input = tensor_input.repeat(tensor_input.size(-1), 1)
+    mask = torch.ones(tensor_input.size(-1)-1).diag(1).repeat(tensor_input.size(0), 1)
+
+    masked_input = repeat_input.masked_fill(mask == 1, mask_token_id)
+    
+    labels = repeat_input.masked_fill(masked_input != mask_token_id, -100).where((repeat_input!=22) * (repeat_input!=21), torch.tensor(-100))
+
+    output = model(masked_input)
+    
+    loss = model.loss_fn(output.view(-1, model.hparams.vocab_size), labels.view(-1))
+    result = torch.exp(loss)
+    return result
+
+
