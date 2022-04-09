@@ -1,9 +1,10 @@
+from dataclasses import dataclass
+from typing import List, Optional, Tuple
+
 import torch
-from torch import nn
 import torch.nn.functional as F
 
-from .extra_fns import ACT2FN
-from .encoderblocks import EncoderBlocks
+from .encoderblock import TransformerEncoder
 from .embedding import AbEmbeddings
 
 
@@ -27,7 +28,7 @@ class AbLang(torch.nn.Module):
     
     def get_aa_embeddings(self):
         "This function is used to extract the trained aa_embeddings."
-        return self.AbRep.AbEmbeddings.aa_embeddings#().weight.detach()
+        return self.AbRep.AbEmbeddings.aa_embeddings
 
     
 class AbRep(torch.nn.Module):
@@ -38,36 +39,30 @@ class AbRep(torch.nn.Module):
         self.hparams = hparams
         
         self.AbEmbeddings = AbEmbeddings(self.hparams)    
-        self.EncoderBlocks = EncoderBlocks(self.hparams)
+        self.EncoderBlocks = torch.nn.ModuleList([TransformerEncoder(self.hparams) for _ in range(self.hparams.num_encoder_blocks)])
+        self.LayerNorm = torch.nn.LayerNorm(hparams.representation_size, eps=hparams.layer_norm_eps)
         
-        self.init_weights()
+    def forward(self, features, attention_mask=None, output_attentions=False, output_representations=False):
         
-    def forward(self, src, attention_mask=None, output_attentions=False):
-        
-        attention_mask = torch.zeros(*src.shape, device=src.device).masked_fill(src == self.hparams.pad_tkn, 1)
+        attention_mask = torch.zeros(*features.shape, device=features.device).masked_fill(features == self.hparams.pad_tkn, 1) # what???????????
 
-        src = self.AbEmbeddings(src)
+        representation = self.AbEmbeddings(features)
         
-        output = self.EncoderBlocks(src, attention_mask=attention_mask, output_attentions=output_attentions)
+        all_representations = () if output_representations else None
+        all_self_attentions = () if output_attentions else None
         
-        return output
-    
-    def _init_weights(self, module):
-        """ Initialize the weights """
-        if isinstance(module, (torch.nn.Linear, torch.nn.Embedding)):
-            module.weight.data.normal_(mean=0.0, std=self.hparams.initializer_range)
-        elif isinstance(module, torch.nn.LayerNorm):
-            module.bias.data.zero_()
-            module.weight.data.fill_(1.0)
-        if isinstance(module, torch.nn.Linear) and module.bias is not None:
-            module.bias.data.zero_()
+        for EncoderBlock in self.EncoderBlocks:  
+            representation, attentions = EncoderBlock(representation, attention_mask, output_attentions)
             
-    def init_weights(self):
-        """
-        Initializes and prunes weights if needed.
-        """
-        # Initialize weights
-        self.apply(self._init_weights)
+            if output_representations: 
+                all_representations = all_representations + (representation,) # Takes out each hidden states after each EncoderBlock
+            
+            if output_attentions: 
+                all_self_attentions = all_self_attentions + (attentions,) # Takes out attention layers for analysis
+           
+        representation = self.LayerNorm(representation)
+
+        return AbRepOutput(last_hidden_states=representation, all_hidden_states=all_representations, attentions=all_self_attentions)
     
 
 class AbHead(torch.nn.Module):
@@ -75,24 +70,31 @@ class AbHead(torch.nn.Module):
     
     def __init__(self, hparams, weights):
         super().__init__()
-
-        self.dense = nn.Linear(hparams.representation_size, hparams.representation_size)
-        self.activation = ACT2FN[hparams.hidden_act]
-        self.layer_norm = nn.LayerNorm(hparams.representation_size, eps=hparams.layer_norm_eps)
+        
+        self.ff = torch.nn.Sequential(
+            torch.nn.Linear(hparams.representation_size, hparams.representation_size),
+            torch.nn.GELU(),
+            torch.nn.LayerNorm(hparams.representation_size, eps=hparams.layer_norm_eps),
+        )
 
         self.weight = weights
-        self.bias = nn.Parameter(torch.zeros(hparams.vocab_size))
-
-        
+        self.bias = torch.nn.Parameter(torch.zeros(hparams.vocab_size))        
 
     def forward(self, features, **kwargs):
-        x = self.dense(features)
+        
+        x = self.ff(features)
 
-        x = self.activation(x)
-        x = self.layer_norm(x)
-
-        # project back to size of vocabulary with bias
-        #x = self.decoder(x)
         x = F.linear(x, self.weight) + self.bias
         
         return x
+
+    
+@dataclass
+class AbRepOutput():
+    """
+    Dataclass used to store AbRep output.
+    """
+
+    last_hidden_states: torch.FloatTensor
+    all_hidden_states: Optional[Tuple[torch.FloatTensor]] = None
+    attentions: Optional[Tuple[torch.FloatTensor]] = None

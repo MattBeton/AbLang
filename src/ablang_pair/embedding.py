@@ -1,5 +1,4 @@
-from torch import nn, cumsum
-
+import torch
 
 class AbEmbeddings(nn.Module):
     """
@@ -10,19 +9,18 @@ class AbEmbeddings(nn.Module):
         super().__init__()
         self.pad_tkn = hparams.pad_tkn
         
-        self.AAEmbeddings = nn.Embedding(hparams.vocab_size, 
+        self.AAEmbeddings = torch.nn.Embedding(hparams.vocab_size, 
                                          hparams.representation_size, 
                                          padding_idx=self.pad_tkn
                                         )
-        self.PositionEmbeddings = nn.Embedding(hparams.max_position_embeddings, 
+        self.PositionEmbeddings = torch.nn.Embedding(hparams.max_position_embeddings, 
                                                hparams.representation_size, 
                                                padding_idx=0 # here padding_idx is always 0
                                               ) 
         
-        self.LayerNorm = nn.LayerNorm(hparams.representation_size, 
-                                      eps=hparams.layer_norm_eps
-                                     )
-        self.Dropout = nn.Dropout(hparams.representation_dropout_prob)
+        self.RegularisationLayer = torch.nn.Sequential(nn.LayerNorm(hparams.representation_size, eps=hparams.layer_norm_eps),
+                                         torch.nn.Dropout(hparams.representation_dropout_prob),
+                                        )
 
     def forward(self, src):
         
@@ -33,7 +31,7 @@ class AbEmbeddings(nn.Module):
 
         embeddings = inputs_embeds + position_embeddings
 
-        return self.Dropout(self.LayerNorm(embeddings))
+        return self.RegularisationLayer(embeddings)
         
     def create_position_ids_from_input_ids(self, input_ids):
         """
@@ -41,5 +39,5 @@ class AbEmbeddings(nn.Module):
         """
         mask = input_ids.ne(self.pad_tkn).int()
         
-        return cumsum(mask, dim=1).long() * mask
+        return torch.cumsum(mask, dim=1).long() * mask
     
