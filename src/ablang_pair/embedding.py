@@ -1,6 +1,6 @@
 import torch
 
-class AbEmbeddings(nn.Module):
+class AbEmbeddings(torch.nn.Module):
     """
     Residue embedding and Positional embedding
     """
