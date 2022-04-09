@@ -18,7 +18,7 @@ class AbEmbeddings(torch.nn.Module):
                                                padding_idx=0 # here padding_idx is always 0
                                               ) 
         
-        self.RegularisationLayer = torch.nn.Sequential(nn.LayerNorm(hparams.representation_size, eps=hparams.layer_norm_eps),
+        self.RegularisationLayer = torch.nn.Sequential(torch.nn.LayerNorm(hparams.representation_size, eps=hparams.layer_norm_eps),
                                          torch.nn.Dropout(hparams.representation_dropout_prob),
                                         )
 
