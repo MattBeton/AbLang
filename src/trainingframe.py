@@ -194,7 +194,7 @@ def calculate_perplexity(model, tokenizer, sentences,  mask_token_id=23):
 
     output = model(masked_input.to(model.device))
     
-    loss = model.loss_fn(output.view(-1, model.hparams.vocab_size), labels.view(-1))
+    loss = model.loss_fn(output.view(-1, model.hparams.vocab_size), labels.view(-1).to(model.device))
     result = torch.exp(loss)
     return result
 
