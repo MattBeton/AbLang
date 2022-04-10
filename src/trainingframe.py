@@ -24,7 +24,27 @@ class TrainingFrame(pl.LightningModule):
         self.tokenizer = tokenizers.ABtokenizer(os.path.join(self.hparams.data_path,'vocab.json'))
         
         self.AbLang = model.AbLang(self.hparams)
+        self.AbLang.apply(self.init_weights)
         self.Evaluations = Evaluations()
+        
+    def init_weights(self, module):
+        """
+        Initialize weights:
+        
+        
+        fan_in seems to work much better than fan_out
+        (https://stackoverflow.com/questions/61848635/how-to-decide-which-mode-to-use-for-kaiming-normal-initialization)
+        """    
+
+        if isinstance(module, (torch.nn.Linear, torch.nn.Embedding)):
+            torch.nn.init.kaiming_uniform_(module.weight, mode='fan_in')
+
+        #elif isinstance(module, torch.nn.LayerNorm):
+        #    module.bias.data.zero_()
+        #    module.weight.data.fill_(1.0)
+
+        #if isinstance(module, torch.nn.Linear) and module.bias is not None:
+        #    module.bias.data.zero_()
 
     def forward(self, x, attention_mask=None):
         
