@@ -37,14 +37,11 @@ class TrainingFrame(pl.LightningModule):
         """    
 
         if isinstance(module, (torch.nn.Linear, torch.nn.Embedding)):
-            torch.nn.init.kaiming_uniform_(module.weight, mode='fan_in')
-
-        #elif isinstance(module, torch.nn.LayerNorm):
-        #    module.bias.data.zero_()
-        #    module.weight.data.fill_(1.0)
-
-        #if isinstance(module, torch.nn.Linear) and module.bias is not None:
-        #    module.bias.data.zero_()
+            torch.nn.init.kaiming_normal_(module.weight, mode='fan_in')
+            
+        if isinstance(module, (torch.nn.Linear)):
+            module.bias.data.fill_(0)
+            
 
     def forward(self, x, attention_mask=None):
         
