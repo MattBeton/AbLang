@@ -63,12 +63,18 @@ class MyDataModule(pl.LightningDataModule):
     def get_data(self, file_path):
         "Reads txt file of sequences."
         
-        with open(os.path.join(file_path,'heavy_chains.txt'), encoding="utf-8") as f:
-            heavychain = [line + '>' for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
-        
-        with open(os.path.join(file_path,'light_chains.txt'), encoding="utf-8") as f:
-            lightchain = ['>' + line for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
-        
+        if os.path.isfile(os.path.join(file_path,'heavy_chains.txt')):
+            with open(os.path.join(file_path,'heavy_chains.txt'), encoding="utf-8") as f:
+                heavychain = [line + '>' for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
+        else:
+            heavychain = []
+            
+        if os.path.isfile(os.path.join(file_path,'light_chains.txt')):
+            with open(os.path.join(file_path,'light_chains.txt'), encoding="utf-8") as f:
+                lightchain = ['>' + line for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
+        else:
+            lightchain = []
+            
         if os.path.isfile(os.path.join(file_path,'paired_chains.txt')):
             with open(os.path.join(file_path,'paired_chains.txt'), encoding="utf-8") as f:
                 pairedchain = [line.replace('|','>') for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
