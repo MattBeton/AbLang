@@ -69,7 +69,10 @@ class MyDataModule(pl.LightningDataModule):
         with open(os.path.join(file_path,'light_chains.txt'), encoding="utf-8") as f:
             lightchain = ['>' + line for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
         
-        with open(os.path.join(file_path,'paired_chains.txt'), encoding="utf-8") as f:
-            pairedchain = [line.replace('|','>') for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
+        if os.path.isfile(os.path.join(file_path,'paired_chains.txt')):
+            with open(os.path.join(file_path,'paired_chains.txt'), encoding="utf-8") as f:
+                pairedchain = [line.replace('|','>') for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
+        else:
+            pairedchain = []
             
         return heavychain + lightchain + pairedchain
