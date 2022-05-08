@@ -35,6 +35,13 @@ class TrainingFrame(pl.LightningModule):
         (https://stackoverflow.com/questions/61848635/how-to-decide-which-mode-to-use-for-kaiming-normal-initialization)
         """    
 
+        # Empirically observed the convergence to be much better with
+        # the scaled initialization
+        #nn.init.xavier_uniform_(self.k_proj.weight, gain=1 / math.sqrt(2))
+            
+        #nn.init.xavier_uniform_(self.v_proj.weight, gain=1 / math.sqrt(2))
+        #nn.init.xavier_uniform_(self.q_proj.weight, gain=1 / math.sqrt(2))
+        
         if isinstance(module, (torch.nn.Linear, torch.nn.Embedding)):
             torch.nn.init.kaiming_normal_(module.weight, mode='fan_in')
 

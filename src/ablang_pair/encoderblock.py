@@ -78,7 +78,8 @@ class Attention(torch.nn.Module):
 
         if mask is not None:
             mask = einops.rearrange(mask, 'b_size (h1 h2 seq_len) -> b_size h1 h2 seq_len', h1=1, h2=1)
-            scores = scores.masked_fill(mask, -1e9)
+            _MASKING_VALUE = -1e+9 if scores.dtype == torch.float32 else -1e+4
+            scores = scores.masked_fill(mask, _MASKING_VALUE)
 
         attention = F.softmax(scores, dim=-1)
         attention = self.attention_dropout(attention)
