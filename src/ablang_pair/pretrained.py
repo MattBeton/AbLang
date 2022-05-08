@@ -122,7 +122,9 @@ class pretrained:
         
         tokens = self.tokenizer(seqs, pad=True)
         
-        predictions = self.AbLang(tokens)[:,:,1:21]
+        predictions = self.AbLang(tokens)[:,1:-1,1:21]
+        
+        predictions = torch.nn.Softmax(dim=-1)(predictions)
         
         return predictions.detach().numpy()
     

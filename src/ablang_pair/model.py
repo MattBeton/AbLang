@@ -36,15 +36,15 @@ class AbRep(torch.nn.Module):
     
     def __init__(self, hparams):
         super().__init__()
-        self.hparams = hparams
+        self.pad_tkn = hparams.pad_tkn
         
-        self.AbEmbeddings = AbEmbeddings(self.hparams)    
-        self.EncoderBlocks = torch.nn.ModuleList([TransformerEncoder(self.hparams) for _ in range(self.hparams.num_encoder_blocks)])
+        self.AbEmbeddings = AbEmbeddings(hparams)    
+        self.EncoderBlocks = torch.nn.ModuleList([TransformerEncoder(hparams) for _ in range(hparams.num_encoder_blocks)])
         self.LayerNorm = torch.nn.LayerNorm(hparams.representation_size, eps=hparams.layer_norm_eps)
         
     def forward(self, features, attention_mask=None, output_attentions=False, output_representations=False):
         
-        attention_mask = torch.zeros(*features.shape, device=features.device).masked_fill(features == self.hparams.pad_tkn, 1) # what???????????
+        attention_mask = (features == self.pad_tkn) # Needs to be here for when you eval
 
         representation = self.AbEmbeddings(features)
         

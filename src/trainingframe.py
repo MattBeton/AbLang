@@ -24,24 +24,22 @@ class TrainingFrame(pl.LightningModule):
         self.tokenizer = tokenizers.ABtokenizer(os.path.join(self.hparams.data_path,'vocab.json'))
         
         self.AbLang = model.AbLang(self.hparams)
-        self.AbLang.apply(self.init_weights)
-        self.Evaluations = Evaluations()
+        self.AbLang.apply(self._init_weights) # Initialize weights
+        self.Evaluations = Evaluations() # Initialize evaluations
         
-    def init_weights(self, module):
+    def _init_weights(self, module):
         """
         Initialize weights:
-        
-        
+
         fan_in seems to work much better than fan_out
         (https://stackoverflow.com/questions/61848635/how-to-decide-which-mode-to-use-for-kaiming-normal-initialization)
         """    
 
         if isinstance(module, (torch.nn.Linear, torch.nn.Embedding)):
             torch.nn.init.kaiming_normal_(module.weight, mode='fan_in')
-            
-        if isinstance(module, (torch.nn.Linear)):
-            module.bias.data.fill_(0)
-            
+
+            if isinstance(module, (torch.nn.Linear)):
+                module.bias.data.fill_(0)
 
     def forward(self, x, attention_mask=None):
         
@@ -200,6 +198,9 @@ def singleSeqValidation(model, tokenizer, testSeq):
 
 
 def calculate_perplexity(model, tokenizer, sentences,  mask_token_id=23):
+    """
+    62.076110763472364 seems to be the start with random weights
+    """
     tensor_input = model.tokenizer(sentences, pad=True)
     
     repeat_input = tensor_input.repeat(tensor_input.size(-1), 1)
