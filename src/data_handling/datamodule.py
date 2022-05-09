@@ -1,4 +1,5 @@
 import os
+import numpy as np
 
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
@@ -39,7 +40,8 @@ class MyDataModule(pl.LightningDataModule):
                                       )
         
         
-        self.train = self.get_data(file_path=os.path.join(self.data_hparams.data_path,'train_data'))
+        self.train = self.get_data(file_path=os.path.join(self.data_hparams.data_path,'train_data'), 
+                                   over_sample_data=self.data_hparams.over_sample_data)
         self.val = self.get_data(file_path=os.path.join(self.data_hparams.data_path,'eval_data'))[:1000]
 
     def train_dataloader(self):
@@ -60,7 +62,7 @@ class MyDataModule(pl.LightningDataModule):
                          )
 
 
-    def get_data(self, file_path):
+    def get_data(self, file_path, over_sample_data=False):
         "Reads txt file of sequences."
         
         if os.path.isfile(os.path.join(file_path,'heavy_chains.txt')):
@@ -81,4 +83,11 @@ class MyDataModule(pl.LightningDataModule):
         else:
             pairedchain = []
             
-        return heavychain + lightchain + pairedchain
+        if over_sample_data:
+            sizes = [len(heavychain), len(lightchain), len(pairedchain)]
+            scale = (np.max(sizes)/sizes).astype(np.int16)
+            
+            return heavychain*scale[0] + lightchain*scale[1] + pairedchain*scale[2]
+            
+        else:
+            return heavychain + lightchain + pairedchain
