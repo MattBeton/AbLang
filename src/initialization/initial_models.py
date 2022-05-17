@@ -19,7 +19,7 @@ class AbLangPaired_v1(pl.LightningModule):
         parser.add_argument('--representation_dropout_prob', type=float, default=0.1)
 
         parser.add_argument('--adam_epsilon', type=float, default=1e-7, help='Adam Epsilon.')
-        parser.add_argument('--mask_percent', type=float, default=0.25, help='Percentage to mask.')
+        parser.add_argument('--mask_num', type=float, default=30, help='Percentage to mask.')
         parser.add_argument('--variable_masking', type=strtobool, default=True, help='Random uniform masking between 0 and mask_percent for each batch.')
         
         

@@ -23,7 +23,7 @@ class MyDataModule(pl.LightningDataModule):
                                         cls_tkn=self.data_hparams.cls_tkn, 
                                         sep_tkn=self.data_hparams.sep_tkn,
                                         mask_tkn=self.data_hparams.mask_tkn,
-                                        mask_percent=self.data_hparams.mask_percent,
+                                        mask_num=self.data_hparams.mask_num,
                                         mask_variable=self.data_hparams.variable_masking,
                                         cdr3_focus=self.data_hparams.cdr3_focus,
                                         mask_technique=self.data_hparams.mask_technique,
@@ -34,9 +34,10 @@ class MyDataModule(pl.LightningDataModule):
                                         cls_tkn=self.data_hparams.cls_tkn, 
                                         sep_tkn=self.data_hparams.sep_tkn,
                                         mask_tkn=self.data_hparams.mask_tkn, 
-                                       mask_percent=0,
-                                       mask_variable=False,
-                                       cdr3_focus=1
+                                       mask_num=self.data_hparams.mask_num,
+                                       mask_variable=self.data_hparams.variable_masking,
+                                       cdr3_focus=1.,
+                                       mask_technique=self.data_hparams.mask_technique,
                                       )
         
         

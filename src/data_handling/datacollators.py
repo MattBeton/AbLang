@@ -18,7 +18,7 @@ class ABcollator():
                  cls_tkn=0, 
                  sep_tkn=22, 
                  mask_tkn=23,
-                 mask_percent=.15, 
+                 mask_num=30, 
                  mask_variable=False, 
                  cdr3_focus=1, 
                  mask_technique='random'):
@@ -28,7 +28,7 @@ class ABcollator():
         self.cls_tkn = cls_tkn 
         self.sep_tkn = sep_tkn 
         self.mask_tkn = mask_tkn
-        self.mask_num = 30
+        self.mask_num = mask_num
         self.mask_variable = mask_variable
         self.cdr3_focus = cdr3_focus
         self.mask_technique = mask_technique
@@ -78,6 +78,8 @@ def create_stop_start_data(data,
     attention_mask = (data == pad_tkn)
     
     allowed_mask = get_allowed_mask(attention_mask, stop_start_mask, mask_technique, mask_num)
+    
+    
     
     if mask_num == 0: # This is for validation cases
         changed_data = data.clone()
