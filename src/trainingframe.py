@@ -63,7 +63,8 @@ class TrainingFrame(pl.LightningModule):
         loss = self.loss_fn(output.view(-1, self.hparams.vocab_size), labels)
         
         # Must clear cache at regular interval
-        if self.global_step % 5 == 0:
+        if batch_idx % self.hparams.accumulate_grad_batches % 1 == 0: #self.global_step 
+            print("Global Step:", self.global_step)
             torch.cuda.empty_cache()
             
         # Only log once every global step
@@ -94,7 +95,7 @@ class TrainingFrame(pl.LightningModule):
         cdr2_loss = all_loss[:, 56:65+1].mean()
         fw3_loss = all_loss[:, 65:105+1].mean()
         cdr3_loss = all_loss[:, 105:117+1].mean()
-        fw4_loss = all_loss[:, 117:].mean()
+        fw4_loss = all_loss[:, 105:117+1].mean() #all_loss[:, 117:].mean()
 
         return {
             'val_loss': loss, 'fw1_loss':fw1_loss, 'cdr1_loss':cdr1_loss, 'fw2_loss':fw2_loss, 
