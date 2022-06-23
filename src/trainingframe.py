@@ -2,6 +2,7 @@ import os
 import numpy as np
 import torch
 import pytorch_lightning as pl
+import math
 
 from loss_updating import loss_fn, optimizers, schedulers
 from evaluation.evaluation import Evaluations
@@ -26,7 +27,7 @@ class TrainingFrame(pl.LightningModule):
         self.AbLang = model.AbLang(self.hparams)
         self.AbLang.apply(self._init_weights) # Initialize weights
         self.Evaluations = Evaluations() # Initialize evaluations
-        
+    
     def _init_weights(self, module):
         """
         Initialize weights:
@@ -43,10 +44,14 @@ class TrainingFrame(pl.LightningModule):
         #nn.init.xavier_uniform_(self.q_proj.weight, gain=1 / math.sqrt(2))
         
         if isinstance(module, (torch.nn.Linear, torch.nn.Embedding)):
-            torch.nn.init.kaiming_normal_(module.weight, mode='fan_in')
+            #torch.nn.init.kaiming_normal_(module.weight, mode='fan_in')
+            torch.nn.init.xavier_uniform_(module.weight, gain=1 / math.sqrt(2))
 
-            if isinstance(module, (torch.nn.Linear)):
-                module.bias.data.fill_(0)
+        elif isinstance(module, torch.nn.LayerNorm):
+            module.bias.data.zero_()
+            module.weight.data.fill_(1.0)
+        if isinstance(module, torch.nn.Linear) and module.bias is not None:
+            module.bias.data.zero_()
 
     def forward(self, x, attention_mask=None):
         
@@ -63,8 +68,7 @@ class TrainingFrame(pl.LightningModule):
         loss = self.loss_fn(output.view(-1, self.hparams.vocab_size), labels)
         
         # Must clear cache at regular interval
-        if batch_idx % self.hparams.accumulate_grad_batches % 1 == 0: #self.global_step 
-            print("Global Step:", self.global_step)
+        if (batch_idx % self.hparams.accumulate_grad_batches) % 10 == 0: #self.global_step 
             torch.cuda.empty_cache()
             
         # Only log once every global step
@@ -95,7 +99,7 @@ class TrainingFrame(pl.LightningModule):
         cdr2_loss = all_loss[:, 56:65+1].mean()
         fw3_loss = all_loss[:, 65:105+1].mean()
         cdr3_loss = all_loss[:, 105:117+1].mean()
-        fw4_loss = all_loss[:, 105:117+1].mean() #all_loss[:, 117:].mean()
+        fw4_loss = all_loss[:, 117:].mean()
 
         return {
             'val_loss': loss, 'fw1_loss':fw1_loss, 'cdr1_loss':cdr1_loss, 'fw2_loss':fw2_loss, 
@@ -143,7 +147,7 @@ class TrainingFrame(pl.LightningModule):
             "lr_scheduler": {
                 "scheduler": scheduler,
                 'interval':'step',
-                #"monitor": "train_loss",
+                "monitor": "train_loss",
                 "frequency":1,
             },
         }

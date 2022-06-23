@@ -62,11 +62,14 @@ class Attention(torch.nn.Module):
         self.embed_dim = embed_dim
         self.num_heads = num_heads
         self.head_dim = embed_dim // num_heads
-
+        
         # Stack all weight matrices 1...h together for efficiency
         # Note that in many implementations you see "bias=False" which is optional
         self.qkv_proj = torch.nn.Linear(input_dim, 3*embed_dim)
         self.out_proj = torch.nn.Linear(embed_dim, embed_dim)
+        
+        torch.nn.init.xavier_uniform_(self.qkv_proj.weight, gain=1 / math.sqrt(2))
+        torch.nn.init.xavier_uniform_(self.out_proj.weight, gain=1 / math.sqrt(2))
         
     def _attention(self, q, k, v, mask=None):
         
