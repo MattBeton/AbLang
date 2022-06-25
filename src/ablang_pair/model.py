@@ -78,7 +78,8 @@ class AbHead(torch.nn.Module):
         )
 
         self.weight = weights
-        self.bias = torch.nn.Parameter(torch.zeros(hparams.vocab_size))        
+        self.bias = torch.nn.Parameter(torch.zeros(hparams.vocab_size))   
+        self.final_layernorm = torch.nn.LayerNorm(hparams.representation_size, eps=hparams.layer_norm_eps)
 
     def forward(self, features, **kwargs):
         
@@ -86,7 +87,7 @@ class AbHead(torch.nn.Module):
 
         x = F.linear(x, self.weight) + self.bias
         
-        return x
+        return self.final_layernorm(x)
 
     
 @dataclass
