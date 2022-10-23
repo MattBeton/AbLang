@@ -49,7 +49,7 @@ class ABcollator():
         else:
             mask_technique = self.mask_technique
 
-        changed_data, data_mask, new_targets = create_stop_start_data(data, 
+        changed_data, attention_mask, new_targets = create_stop_start_data(data, 
                                                                   pad_tkn=self.pad_tkn, 
                                                                   cls_tkn=self.cls_tkn, 
                                                                   sep_tkn=self.sep_tkn, 
@@ -59,7 +59,7 @@ class ABcollator():
                                                                   mask_technique = mask_technique
                                                                  )
         
-        return {'input':changed_data, 'labels':new_targets.view(-1), 'attention_mask':data_mask, 'sequences':batch}
+        return {'input':changed_data, 'labels':new_targets.view(-1), 'attention_mask':attention_mask, 'sequences':batch}
 
 
 def create_stop_start_data(data, 
