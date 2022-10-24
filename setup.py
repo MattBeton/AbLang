@@ -11,7 +11,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     include_package_data=True,
-    packages=find_packages(include=('src', 'src.*')),
+    packages=find_packages(include=('ablang_train', 'ablang_train.*')),
     package_data={
         '': ['*.txt']
     },

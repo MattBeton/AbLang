@@ -19,8 +19,8 @@ class TransformerEncoder(torch.nn.Module):
         self, 
         hidden_embed_size,
         n_attn_heads,
-        attn_dropout,
-        layer_norm_eps,
+        attn_dropout: float = 0.0,
+        layer_norm_eps: float = 1e-05,
     ):
         super().__init__()
         
@@ -42,13 +42,13 @@ class TransformerEncoder(torch.nn.Module):
         self.pre_attn_layer_norm = torch.nn.LayerNorm(hidden_embed_size, eps=layer_norm_eps)
         self.final_layer_norm = torch.nn.LayerNorm(hidden_embed_size, eps=layer_norm_eps)
         
-    def forward(self, hidden_embed, attn_mask=None, return_attn_weights=False):
+    def forward(self, hidden_embed, attn_mask=None, return_attn_weights: bool = False):
         
         residual = hidden_embed
         hidden_embed = self.pre_attn_layer_norm(hidden_embed) # DERIVED FROM ESM-1b?
         hidden_embed, attn_weights = self.multihead_attention(hidden_embed, 
-                                                              mask=attn_mask, 
-                                                              return_attention=return_attn_weights
+                                                              attn_mask=attn_mask, 
+                                                              return_attn_weights=return_attn_weights
                                                              )
         hidden_embed = residual + hidden_embed
         
@@ -66,8 +66,8 @@ class MultiHeadAttention(torch.nn.Module):
         self, 
         embed_dim,
         num_heads, 
-        attention_dropout_prob=0.0,
-        bias=True,
+        attention_dropout_prob: float = 0.0,
+        bias: bool = True,
     ):
         super().__init__()
         
@@ -99,15 +99,15 @@ class MultiHeadAttention(torch.nn.Module):
         if self.out_proj.bias is not None:
             nn.init.constant_(self.out_proj.bias, 0.0)
         
-    def attention(self, q, k, v, mask=None):
+    def attention(self, q, k, v, attn_mask=None):
         
         # scaled_dot_product_attention
         attn_weights = torch.matmul(q, k.transpose(-2, -1)) 
         attn_weights = attn_weights / math.sqrt(self.head_dim)
                 
-        if mask is not None:
-            mask = einops.rearrange(mask, 'b_size (h1 h2 seq_len) -> b_size h1 h2 seq_len', h1=1, h2=1)
-            attn_weights = attn_weights.masked_fill(mask, float("-inf"))
+        if attn_mask is not None:
+            attn_mask = einops.rearrange(attn_mask, 'b_size (h1 h2 seq_len) -> b_size h1 h2 seq_len', h1=1, h2=1)
+            attn_weights = attn_weights.masked_fill(attn_mask, float("-inf"))
 
         attn_weights = F.softmax(attn_weights, dim=-1)
         
@@ -115,7 +115,7 @@ class MultiHeadAttention(torch.nn.Module):
         attn = torch.matmul(attn, v)
         return attn, attn_weights       
 
-    def forward(self, x, mask=None, return_attn_weights=False):
+    def forward(self, x, attn_mask=None, return_attn_weights: bool = False):
         
         batch_size, seq_len, embed_dim = x.size()
         
@@ -130,7 +130,7 @@ class MultiHeadAttention(torch.nn.Module):
         k = self.rotary_emb.rotate_queries_or_keys(k)
         
         # Determine value outputs
-        attn, attn_weights = self.attention(q, k, v, mask=mask) # attn_weights [n_batch, n_heads, seq_len (target), seq_len (source)]
+        attn, attn_weights = self.attention(q, k, v, attn_mask=attn_mask) # attn_weights [n_batch, n_heads, seq_len (target), seq_len (source)]
     
         attn = attn.transpose(1, 2).reshape(batch_size, seq_len, embed_dim)
         

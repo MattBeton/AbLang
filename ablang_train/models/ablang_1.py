@@ -42,6 +42,35 @@ class AbRep(torch.nn.Module):
         self.EncoderBlocks = torch.nn.ModuleList([TransformerEncoder(hparams) for _ in range(hparams.num_encoder_blocks)])
         self.LayerNorm = torch.nn.LayerNorm(hparams.representation_size, eps=hparams.layer_norm_eps)
         
+    def additional():
+        
+        if return_contacts:
+            need_head_weights = True
+
+        assert tokens.ndim == 2
+        padding_mask = tokens.eq(self.padding_idx)  # B, T
+
+        x = self.embed_scale * self.embed_tokens(tokens)
+
+        if self.token_dropout:
+            x.masked_fill_((tokens == self.mask_idx).unsqueeze(-1), 0.0)
+            # x: B x T x C
+            mask_ratio_train = 0.15 * 0.8
+            src_lengths = (~padding_mask).sum(-1)
+            mask_ratio_observed = (tokens == self.mask_idx).sum(-1).to(x.dtype) / src_lengths
+            x = x * (1 - mask_ratio_train) / (1 - mask_ratio_observed)[:, None, None]
+
+        if padding_mask is not None:
+            x = x * (1 - padding_mask.unsqueeze(-1).type_as(x))
+
+        repr_layers = set(repr_layers)
+        hidden_representations = {}
+        if 0 in repr_layers:
+            hidden_representations[0] = x
+
+        if need_head_weights:
+            attn_weights = []
+        
     def forward(self, features, attention_mask=None, output_attentions=False, output_representations=False):
         
         attention_mask = (features == self.pad_tkn) # Needs to be here for when you eval
