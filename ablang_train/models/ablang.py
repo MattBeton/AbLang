@@ -1,16 +1,17 @@
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 import torch
 from torch import nn
 import torch.nn.functional as F
 
 from .encoderblock import TransformerEncoder
-from .embedding import AbEmbeddings
 
 
 class AbLang(torch.nn.Module):
-    """Pretraining model includes Abrep and the head model used for training."""
+    """
+    AbLang inspired by ESM-2's architecture.
+    """
     
     def __init__(
         self,
