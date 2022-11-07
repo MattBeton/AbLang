@@ -18,7 +18,7 @@ class ABcollator():
                  cls_tkn=0, 
                  sep_tkn=22, 
                  mask_tkn=23,
-                 mask_num=30, 
+                 mask_percent=.15, 
                  mask_variable=False, 
                  cdr3_focus=1, 
                  mask_technique='random'):
@@ -28,28 +28,33 @@ class ABcollator():
         self.cls_tkn = cls_tkn 
         self.sep_tkn = sep_tkn 
         self.mask_tkn = mask_tkn
-        self.mask_num = mask_num
+        self.mask_percent = mask_percent
         self.mask_variable = mask_variable
         self.cdr3_focus = cdr3_focus
         self.mask_technique = mask_technique
         
-    def __call__(self, batch):
+    def get_mask_arguments(self, tkn_sequences):
         
-        data = self.tokenizer(batch, pad=True)
+        mask_num = int(tkn_sequences.shape[0] * self.mask_percent)
         
-        targets = data.clone()
-
         if self.mask_variable:
-            mask_num = np.random.randint(1, self.mask_num, size=None)
-        else:
-            mask_num = self.mask_num
+            mask_num = np.random.randint(1, mask_num, size=None)
             
         if self.mask_technique == 'mix':
             mask_technique = np.random.choice(['random','connected'], size=None)
         else:
             mask_technique = self.mask_technique
+            
+        return mask_num, mask_technique
+        
+        
+    def __call__(self, batch):
+        
+        tkn_sequences = self.tokenizer(batch, pad=True)
 
-        changed_data, attention_mask, new_targets = create_stop_start_data(data, 
+        mask_num, mask_technique = self.get_mask_arguments(tkn_sequences)
+
+        masked_sequences, target_tkns = generate_masked_sequences(tkn_sequences, 
                                                                   pad_tkn=self.pad_tkn, 
                                                                   cls_tkn=self.cls_tkn, 
                                                                   sep_tkn=self.sep_tkn, 
@@ -59,10 +64,10 @@ class ABcollator():
                                                                   mask_technique = mask_technique
                                                                  )
         
-        return {'input':changed_data, 'labels':new_targets.view(-1), 'attention_mask':attention_mask, 'sequences':batch}
+        return {'input':masked_sequences, 'labels':target_tkns.view(-1), 'sequences':batch}
 
 
-def create_stop_start_data(data, 
+def generate_masked_sequences(tkn_sequences, 
                            pad_tkn=21, 
                            cls_tkn=0, 
                            sep_tkn=22, 
@@ -74,37 +79,34 @@ def create_stop_start_data(data,
     """
     Same as create_BERT_data, but also keeps start and stop.
     """
-    stop_start_mask = ((data == cls_tkn) | (data == sep_tkn))
-    attention_mask = (data == pad_tkn)
+    stop_start_mask = ((tkn_sequences == cls_tkn) | (tkn_sequences == sep_tkn))
+    attention_mask = tkn_sequences.eq(pad_tkn)
     
     allowed_mask = get_allowed_mask(attention_mask, stop_start_mask, mask_technique, mask_num)
     
     
-    
     if mask_num == 0: # This is for validation cases
-        changed_data = data.clone()
-        targets = data.clone()
-        targets[attention_mask] = -100
-        
-        return changed_data, attention_mask, targets
+        masked_sequences = tkn_sequences.clone()
+        tkn_sequences[attention_mask] = -100
+        return masked_sequences, tkn_sequences
 
-    idx_change, _, idx_mask = get_indexes(allowed_mask, 
-                                                      mask_num=mask_num, 
-                                                      change_percent=.1, 
-                                                      leave_percent=.1, 
-                                                      cdr3_focus=cdr3_focus, 
-                                                      mask_technique=mask_technique)
+    idx_change, _, idx_mask = get_indexes(
+        allowed_mask, 
+        mask_num=mask_num, 
+        change_percent=.1, 
+        leave_percent=.1, 
+        cdr3_focus=cdr3_focus, 
+        mask_technique=mask_technique
+    )
     
-    changed_data = data.clone()
-    changed_data.scatter_(1, idx_change, torch.randint(1, 20, changed_data.shape, device=data.device)) # randomly changes idx_change in the data 
-    changed_data.scatter_(1, idx_mask, mask_tkn) # change idx_mask inputs to <mask>
+    masked_sequences = tkn_sequences.clone()
+    masked_sequences.scatter_(1, idx_change, torch.randint(1, 20, masked_sequences.shape, device=masked_sequences.device)) # randomly changes idx_change in the data 
+    masked_sequences.scatter_(1, idx_mask, mask_tkn) # change idx_mask inputs to <mask>
     
-    targets = data.clone()
-    target_mask = stop_start_mask.clone()
-    target_mask.scatter_(1, idx_mask, 1)
-    targets[~target_mask.long().bool()] = -100
+    stop_start_mask.scatter_(1, idx_mask, 1)
+    tkn_sequences[~stop_start_mask.long().bool()] = -100
     
-    return changed_data, attention_mask, targets
+    return masked_sequences, tkn_sequences
 
 
 def get_allowed_mask(attention_mask, stop_start_mask, mask_technique, mask_num):
@@ -130,8 +132,6 @@ def re_adjust_matrix(matrix, stop_start_mask, adjustment):
         matrix[test_idx[0],range(test_idx[1]-adjustment, test_idx[1])] = 0
 
     return matrix
-    
-    
     
 
 def get_indexes(allowed_mask, 

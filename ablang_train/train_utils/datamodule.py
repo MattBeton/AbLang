@@ -12,7 +12,7 @@ class MyDataModule(pl.LightningDataModule):
     def __init__(self, data_hparams, tokenizer):
         super().__init__()
         self.data_hparams = data_hparams
-        self.tokenizer = tokenizer.ABtokenizer(os.path.join(data_hparams.data_path,'vocab.json'))
+        self.tokenizer = tokenizer(os.path.join(data_hparams.data_path,'vocab.json'))
 
         
         
@@ -23,7 +23,7 @@ class MyDataModule(pl.LightningDataModule):
                                         cls_tkn=self.data_hparams.cls_tkn, 
                                         sep_tkn=self.data_hparams.sep_tkn,
                                         mask_tkn=self.data_hparams.mask_tkn,
-                                        mask_num=self.data_hparams.mask_num,
+                                        mask_percent=self.data_hparams.mask_percent,
                                         mask_variable=self.data_hparams.variable_masking,
                                         cdr3_focus=self.data_hparams.cdr3_focus,
                                         mask_technique=self.data_hparams.mask_technique,
@@ -31,18 +31,20 @@ class MyDataModule(pl.LightningDataModule):
         
         self.evalcollater = ABcollator(self.tokenizer, 
                                        pad_tkn=self.data_hparams.pad_tkn,
-                                        cls_tkn=self.data_hparams.cls_tkn, 
-                                        sep_tkn=self.data_hparams.sep_tkn,
-                                        mask_tkn=self.data_hparams.mask_tkn, 
-                                       mask_num=self.data_hparams.mask_num,
+                                       cls_tkn=self.data_hparams.cls_tkn, 
+                                       sep_tkn=self.data_hparams.sep_tkn,
+                                       mask_tkn=self.data_hparams.mask_tkn, 
+                                       mask_percent=self.data_hparams.mask_percent,
                                        mask_variable=self.data_hparams.variable_masking,
                                        cdr3_focus=1.,
                                        mask_technique=self.data_hparams.mask_technique,
                                       )
         
         
-        self.train = self.get_data(file_path=os.path.join(self.data_hparams.data_path,'train_data'), 
-                                   over_sample_data=self.data_hparams.over_sample_data)
+        self.train = self.get_data(
+            file_path=os.path.join(self.data_hparams.data_path,'train_data'),
+            over_sample_data=self.data_hparams.over_sample_data
+        )
         self.val = self.get_data(file_path=os.path.join(self.data_hparams.data_path,'eval_data'))[:1000]
 
     def train_dataloader(self):

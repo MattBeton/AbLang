@@ -107,6 +107,7 @@ class MultiHeadAttention(torch.nn.Module):
                 
         if attn_mask is not None:
             attn_mask = einops.rearrange(attn_mask, 'b_size (h1 h2 seq_len) -> b_size h1 h2 seq_len', h1=1, h2=1)
+            
             attn_weights = attn_weights.masked_fill(attn_mask, float("-inf"))
 
         attn_weights = F.softmax(attn_weights, dim=-1)
@@ -132,7 +133,7 @@ class MultiHeadAttention(torch.nn.Module):
         # Determine value outputs
         attn, attn_weights = self.attention(q, k, v, attn_mask=attn_mask) # attn_weights [n_batch, n_heads, seq_len (target), seq_len (source)]
     
-        attn = attn.transpose(1, 2).reshape(batch_size, seq_len, embed_dim)
+        attn = attn.transpose(1, 2).reshape(batch_size, seq_len, embed_dim)       
         
         attn = self.out_proj(attn)
 

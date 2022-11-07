@@ -7,7 +7,7 @@ from neptune.new.types import File
 
 def plot_Ab_embeddings(trainer):
     
-    xembeds = trainer.AbLang.AbRep.AbEmbeddings.AAEmbeddings.weight.detach().cpu().numpy()
+    xembeds = trainer.ablang.get_aa_embeddings.weight.detach().cpu().numpy()
     vocabs = trainer.tokenizer.vocab_to_aa
     
     
@@ -36,39 +36,3 @@ def plot_Ab_embeddings(trainer):
             
     trainer.logger.experiment["evaluation/aa_embeddings"].log(File.as_image(g.fig)) #.upload(g.fig)
     plt.close()
-    
-def plot_Ap_embeddings(trainer):
-    
-    xembeds = trainer.AbLang.AbRep.AbEmbeddings.PositionEmbeddings.weight.detach().cpu().numpy()
-
-    pos_embeds = pos_matrix(xembeds[1:])
-    np.fill_diagonal(pos_embeds, 0)
-
-    fig, ax = plt.subplots(figsize=(9,6))
-
-    sns.heatmap(pos_embeds, cmap="coolwarm", ax=ax, cbar=False, xticklabels=10, vmin=-.2, vmax=.7)
-    fig.colorbar(ax.collections[0], ax=ax, location="right", use_gridspec=False, pad=0.2)
-    
-    trainer.logger.experiment["evaluation/pos_embeddings"].log(File.as_image(fig))
-    plt.close()
-    
-def pos_matrix(pos_embeds):
-    similarity = np.dot(pos_embeds, pos_embeds.T)
-
-    # squared magnitude of preference vectors (number of occurrences)
-    square_mag = np.diag(similarity)
-
-    # inverse squared magnitude
-    inv_square_mag = 1 / square_mag
-
-    # if it doesn't occur, set it's inverse magnitude to zero (instead of inf)
-    inv_square_mag[np.isinf(inv_square_mag)] = 0
-
-    # inverse of the magnitude
-    inv_mag = np.sqrt(inv_square_mag)
-
-    # cosine similarity (elementwise multiply by inverse magnitudes)
-    cosine = similarity * inv_mag
-    cosine = cosine.T * inv_mag
-    
-    return cosine

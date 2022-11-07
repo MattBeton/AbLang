@@ -1,4 +1,4 @@
-from .embeddings import plot_Ab_embeddings, plot_Ap_embeddings
+from .embeddings import plot_Ab_embeddings
 #from .loss_test import log_valuation_loss, log_restoring_sequence
 
 
@@ -16,5 +16,4 @@ class Evaluations:
         #log_restoring_sequence(trainer)
         
         plot_Ab_embeddings(trainer)
-        plot_Ap_embeddings(trainer)
         

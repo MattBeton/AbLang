@@ -59,6 +59,7 @@ class AbLang(torch.nn.Module):
             likelihoods = self.AbHead(representations.last_hidden_states)
             return likelihoods
     
+    @property
     def get_aa_embeddings(self):
         "Extracts the trained aa_embeddings."
         return self.AbRep.aa_embed_layer

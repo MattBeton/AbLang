@@ -7,7 +7,6 @@ import numpy as np
 
 import pytorch_lightning as pl
 from pytorch_lightning.plugins import DDPPlugin
-from pytorch_lightning.loggers.neptune import NeptuneLogger
 
 from .initial_models import AbLangPaired_v1
 
@@ -128,7 +127,6 @@ class PrepareArguments:
         self.set_vocab_args()
         self.set_gpus()
         self.set_gpus_settings()
-        #self.set_neptune_logger()
         self.set_trainer_args()
         
         return ModelArguments(program_args='', trainer_args=self.trainer_args, model_specific_args=self.args)

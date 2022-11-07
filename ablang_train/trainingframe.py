@@ -4,8 +4,8 @@ import torch
 import pytorch_lightning as pl
 import math
 
-from loss_updating import loss_fn, optimizers, schedulers
-from evaluation.evaluation import Evaluations
+from ablang_train.train_utils import loss_fn, optimizers, schedulers
+from ablang_train.evaluation.evaluation import Evaluations
 
 
 class TrainingFrame(pl.LightningModule):
@@ -16,54 +16,35 @@ class TrainingFrame(pl.LightningModule):
     
     """
 
-    def __init__(self, conf, model, tokenizers):
+    def __init__(self, conf, model, tokenizer):
         super().__init__()
         self.save_hyperparameters(conf) # saves to self.hparams
         
-        self.loss_fn = loss_fn.get_loss_fn('CrossEntropy_Loss')()
-        self.val_loss_fn = loss_fn.get_loss_fn('CrossEntropy_Loss')()
-        self.tokenizer = tokenizers.ABtokenizer(os.path.join(self.hparams.data_path,'vocab.json'))
+        self.loss_fn = torch.nn.CrossEntropyLoss()
+        self.tokenizer = tokenizer(os.path.join(self.hparams.data_path,'vocab.json'))
         
-        self.AbLang = model.AbLang(self.hparams)
-        self.AbLang.apply(self._init_weights) # Initialize weights
-        self.Evaluations = Evaluations() # Initialize evaluations
-    
-    def _init_weights(self, module):
-        """
-        Initialize weights:
+        self.ablang = model(
+            vocab_size = self.hparams.vocab_size,
+            hidden_embed_size = self.hparams.hidden_embed_size,
+            n_attn_heads = self.hparams.n_attn_heads,
+            n_encoder_blocks = self.hparams.n_encoder_blocks,
+            padding_tkn = self.hparams.pad_tkn,
+            mask_tkn = self.hparams.mask_tkn,
+            layer_norm_eps = self.hparams.layer_norm_eps,
+            dropout = self.hparams.dropout, 
+            use_tkn_dropout = self.hparams.use_tkn_dropout,
+        )
+        self.run_evaluations = Evaluations() # Initialize evaluations
 
-        fan_in seems to work much better than fan_out
-        (https://stackoverflow.com/questions/61848635/how-to-decide-which-mode-to-use-for-kaiming-normal-initialization)
-        """    
-
-        # Empirically observed the convergence to be much better with
-        # the scaled initialization
-        #nn.init.xavier_uniform_(self.k_proj.weight, gain=1 / math.sqrt(2))
-            
-        #nn.init.xavier_uniform_(self.v_proj.weight, gain=1 / math.sqrt(2))
-        #nn.init.xavier_uniform_(self.q_proj.weight, gain=1 / math.sqrt(2))
+    def forward(self, tokens):
         
-        if isinstance(module, (torch.nn.Linear, torch.nn.Embedding)):
-            #torch.nn.init.kaiming_normal_(module.weight, mode='fan_in')
-            torch.nn.init.xavier_uniform_(module.weight, gain=1 / math.sqrt(2))
-
-        elif isinstance(module, torch.nn.LayerNorm):
-            module.bias.data.zero_()
-            module.weight.data.fill_(1.0)
-        if isinstance(module, torch.nn.Linear) and module.bias is not None:
-            module.bias.data.zero_()
-
-    def forward(self, x, attention_mask=None):
-        
-        output = self.AbLang(x, attention_mask)
-        
-        return output
+        return self.ablang(tokens)
 
     def training_step(self, dataset, batch_idx): 
         
-        data, labels, attention_mask = dataset['input'], dataset['labels'], dataset['attention_mask']
+        tokens, labels = dataset['input'], dataset['labels']
         
-        output = self(data, attention_mask=attention_mask)
+        output = self(tokens)
 
         loss = self.loss_fn(output.view(-1, self.hparams.vocab_size), labels)
         
@@ -83,27 +64,27 @@ class TrainingFrame(pl.LightningModule):
     
     def validation_step(self, dataset, batch_idx): # Updated every step when validation is called
         
-        data, labels = dataset['input'], dataset['labels']
+        tokens, labels = dataset['input'], dataset['labels']
         
         pp_score = calculate_perplexity(self, self.tokenizer, dataset['sequences'][:10])
         
-        output = self(data, attention_mask=None)
+        output = self(tokens)
         
-        loss = self.val_loss_fn(output.view(-1, self.hparams.vocab_size), labels)
+        loss = self.loss_fn(output.view(-1, self.hparams.vocab_size), labels)
         
-        all_loss = self.val_loss_fn(output.view(-1, self.hparams.vocab_size), labels, reduce=False).view(output.shape[:-1])[:, 1:]
+        #all_loss = self.loss_fn(output.view(-1, self.hparams.vocab_size), labels, reduce=False).view(output.shape[:-1])[:, 1:]
                 
-        fw1_loss = all_loss[:, :27+1].mean()
-        cdr1_loss = all_loss[:, 27:38+1].mean()
-        fw2_loss = all_loss[:, 38:56+1].mean()
-        cdr2_loss = all_loss[:, 56:65+1].mean()
-        fw3_loss = all_loss[:, 65:105+1].mean()
-        cdr3_loss = all_loss[:, 105:117+1].mean()
-        fw4_loss = all_loss[:, 117:].mean()
+        #fw1_loss = all_loss[:, :27+1].mean()
+        #cdr1_loss = all_loss[:, 27:38+1].mean()
+        #fw2_loss = all_loss[:, 38:56+1].mean()
+        #cdr2_loss = all_loss[:, 56:65+1].mean()
+        #fw3_loss = all_loss[:, 65:105+1].mean()
+        #cdr3_loss = all_loss[:, 105:117+1].mean()
+        #fw4_loss = all_loss[:, 117:].mean()
 
         return {
-            'val_loss': loss, 'fw1_loss':fw1_loss, 'cdr1_loss':cdr1_loss, 'fw2_loss':fw2_loss, 
-            'cdr2_loss':cdr2_loss, 'fw3_loss':fw3_loss, 'cdr3_loss':cdr3_loss, 'fw4_loss':fw4_loss,
+            'val_loss': loss, #'fw1_loss':fw1_loss, 'cdr1_loss':cdr1_loss, 'fw2_loss':fw2_loss, 
+            #'cdr2_loss':cdr2_loss, 'fw3_loss':fw3_loss, 'cdr3_loss':cdr3_loss, 'fw4_loss':fw4_loss,
             'pp_score':pp_score,
                }
     
@@ -116,7 +97,7 @@ class TrainingFrame(pl.LightningModule):
         self.log_valuation_loss(val_step_outputs)
         self.log_restoring_sequence()
         
-        self.Evaluations(self)
+        self.run_evaluations(self)
 
     
     def configure_optimizers(self):
@@ -156,22 +137,22 @@ class TrainingFrame(pl.LightningModule):
     def log_valuation_loss(self, val_step_outputs):
 
         val_loss = torch.stack([x['val_loss'] for x in val_step_outputs]).mean()
-        fw1_loss = torch.stack([x['fw1_loss'] for x in val_step_outputs]).mean()
-        cdr1_loss = torch.stack([x['cdr1_loss'] for x in val_step_outputs]).mean()
-        fw2_loss = torch.stack([x['fw2_loss'] for x in val_step_outputs]).mean()
-        cdr2_loss = torch.stack([x['cdr2_loss'] for x in val_step_outputs]).mean()
-        fw3_loss = torch.stack([x['fw3_loss'] for x in val_step_outputs]).mean()
-        cdr3_loss = torch.stack([x['cdr3_loss'] for x in val_step_outputs]).mean()
-        fw4_loss = torch.stack([x['fw4_loss'] for x in val_step_outputs]).mean()
+        #fw1_loss = torch.stack([x['fw1_loss'] for x in val_step_outputs]).mean()
+        #cdr1_loss = torch.stack([x['cdr1_loss'] for x in val_step_outputs]).mean()
+        #fw2_loss = torch.stack([x['fw2_loss'] for x in val_step_outputs]).mean()
+        #cdr2_loss = torch.stack([x['cdr2_loss'] for x in val_step_outputs]).mean()
+        #fw3_loss = torch.stack([x['fw3_loss'] for x in val_step_outputs]).mean()
+        #cdr3_loss = torch.stack([x['cdr3_loss'] for x in val_step_outputs]).mean()
+        #fw4_loss = torch.stack([x['fw4_loss'] for x in val_step_outputs]).mean()
 
         self.logger.experiment["evaluation/eval_loss"].log(val_loss)
-        self.logger.experiment["evaluation/fw1_loss"].log(fw1_loss)
-        self.logger.experiment["evaluation/cdr1_loss"].log(cdr1_loss)
-        self.logger.experiment["evaluation/fw2_loss"].log(fw2_loss)
-        self.logger.experiment["evaluation/cdr2_loss"].log(cdr2_loss)
-        self.logger.experiment["evaluation/fw3_loss"].log(fw3_loss)
-        self.logger.experiment["evaluation/cdr3_loss"].log(cdr3_loss)
-        self.logger.experiment["evaluation/fw4_loss"].log(fw4_loss)
+        #self.logger.experiment["evaluation/fw1_loss"].log(fw1_loss)
+        #self.logger.experiment["evaluation/cdr1_loss"].log(cdr1_loss)
+        #self.logger.experiment["evaluation/fw2_loss"].log(fw2_loss)
+        #self.logger.experiment["evaluation/cdr2_loss"].log(cdr2_loss)
+        #self.logger.experiment["evaluation/fw3_loss"].log(fw3_loss)
+        #self.logger.experiment["evaluation/cdr3_loss"].log(cdr3_loss)
+        #self.logger.experiment["evaluation/fw4_loss"].log(fw4_loss)
 
 
     def log_restoring_sequence(self):
