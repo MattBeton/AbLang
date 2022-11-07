@@ -4,9 +4,7 @@ import torch
 import pytorch_lightning as pl
 import math
 
-from ablang_train.train_utils import loss_fn, optimizers, schedulers
-from ablang_train.evaluation.evaluation import Evaluations
-
+from ablang_train import optimizers, schedulers, Evaluations
 
 class TrainingFrame(pl.LightningModule):
     """

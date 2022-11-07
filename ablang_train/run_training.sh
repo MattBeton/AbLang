@@ -35,7 +35,7 @@ conda activate ablang-train
 #export NCCL_SOCKET_IFNAME=^docker0,lo
 #export MASTER_PORT=$((12000 + RANDOM % 20000))
 
-cd /homes/olsen/projects/ablang-train/src
+cd /data/nagagpu02/not-backed-up/scratch/olsen/projects/ablang-train/ablang_train/
 
 chmod 775 run_training.py
 srun python3 run_training.py --name ablang \
