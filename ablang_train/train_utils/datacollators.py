@@ -35,7 +35,7 @@ class ABcollator():
         
     def get_mask_arguments(self, tkn_sequences):
         
-        mask_num = int(tkn_sequences.shape[0] * self.mask_percent)
+        mask_num = int(tkn_sequences.shape[1] * self.mask_percent)
         
         if self.mask_variable:
             mask_num = np.random.randint(1, mask_num, size=None)
@@ -87,8 +87,9 @@ def generate_masked_sequences(tkn_sequences,
     
     if mask_num == 0: # This is for validation cases
         masked_sequences = tkn_sequences.clone()
-        tkn_sequences[attention_mask] = -100
-        return masked_sequences, tkn_sequences
+        target_sequences = tkn_sequences.clone()
+        target_sequences[attention_mask] = -100
+        return masked_sequences, target_sequences
 
     idx_change, _, idx_mask = get_indexes(
         allowed_mask, 
@@ -103,10 +104,11 @@ def generate_masked_sequences(tkn_sequences,
     masked_sequences.scatter_(1, idx_change, torch.randint(1, 20, masked_sequences.shape, device=masked_sequences.device)) # randomly changes idx_change in the data 
     masked_sequences.scatter_(1, idx_mask, mask_tkn) # change idx_mask inputs to <mask>
     
+    target_sequences = tkn_sequences.clone()
     stop_start_mask.scatter_(1, idx_mask, 1)
-    tkn_sequences[~stop_start_mask.long().bool()] = -100
+    target_sequences[~stop_start_mask.long().bool()] = -100
     
-    return masked_sequences, tkn_sequences
+    return masked_sequences, target_sequences
 
 
 def get_allowed_mask(attention_mask, stop_start_mask, mask_technique, mask_num):
@@ -146,6 +148,7 @@ def get_indexes(allowed_mask,
     
     
     if mask_technique == 'random':
+        
         idx = torch.multinomial(allowed_mask.float(), num_samples=mask_num, replacement=False)
     
     elif mask_technique == 'connected':

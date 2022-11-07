@@ -112,12 +112,9 @@ class PrepareArguments:
         hparamstmp = {**vars(self.args)}
         trainer_args = pl.Trainer.default_attributes()
         del trainer_args['callbacks'] # Do this for easier coding with callbacks
-        del trainer_args['progress_bar_refresh_rate']
 
         for key, value in trainer_args.items():
             trainer_args[key] = hparamstmp[key]
-        
-        #trainer_args['logger'] = self.args.logger
         
         self.trainer_args = trainer_args
         
