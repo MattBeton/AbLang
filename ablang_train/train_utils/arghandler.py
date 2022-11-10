@@ -18,12 +18,6 @@ def parse_args(args=None, is_test=False):
     parser = argparse.ArgumentParser()
     
     parser.add_argument('--name', '-n', type=str, default="Model", help='Model name.')
-    parser.add_argument('--cpus', type=int, default=1, help='Number of cpus to use on data handling (4xGPUs is the recommended). \
-                                                                    0 uses the main process to load the data.')
-    
-    
-    parser.add_argument('--mask_technique', type=str, default="random", help='masking technique to use. {standard, standard-sl_mask}')
-    
     parser = AbLangPaired_v1.add_model_specific_args(parser)
     parser = AbLangPaired_v1.add_training_specific_args(parser)
     
@@ -64,46 +58,36 @@ class PrepareArguments:
         self.args.mask_tkn = vocab['*']
         self.args.vocab_size = len(vocab)
 
-    def set_gpus(self):
-        """
-        Add training args to hparam
-        """ 
-        try:
-            if self.args.gpus > 1:
-                self.args.gpu_count = self.args.gpus
-                self.args.strategy = DDPPlugin(find_unused_parameters=False)
-                self.args.precision = 16
-            elif self.args.gpus == 1:
-                self.args.gpu_count = self.args.gpus
-                self.args.precision = 16
-            else:
-                self.args.gpu_count = 1
-        except:
-            self.args.gpu_count = 1
-
-    def set_gpus_settings(self):
+    def _set_n_accummulated_grad_batches(self):
+        
+        gpu_batch_size = self.args.effective_batch_size // self.args.devices # Spread effective batch size across GPUs and gradient accumulation
+        
+        if int(gpu_batch_size // self.args.max_fit_batch_size) > 1: # Calculates how many times the gradients needs to be accumulated
+            self.args.accumulate_grad_batches = int(gpu_batch_size // self.args.max_fit_batch_size)
+            self.args.val_check_interval = int(self.args.val_check_interval * self.args.accumulate_grad_batches) # Adjust val check
+        
+    def set_device_arguments(self):
         """
         Hyparameters scale weirdly with gpus. This function is to adjust them based on gpu_counts.
         
         The following link provides a discussion for setting effective batch size and learning rate:
         https://forums.pytorchlightning.ai/t/effective-learning-rate-and-batch-size-with-lightning-in-ddp/101/8
-        """
-
-        gpu_batch_size = self.args.effective_batch_size // self.args.gpu_count # Spread effective batch size across GPUs and gradient accumulation
+        """ 
         
-        if int(gpu_batch_size // self.args.max_fit_batch_size) > 1: # Calculates how many times the gradients needs to be accumulated
-            self.args.accumulate_grad_batches = int(gpu_batch_size // self.args.max_fit_batch_size)
-            self.args.val_check_interval = int(self.args.val_check_interval * self.args.accumulate_grad_batches) # Adjust val check
+        if self.args.accelerator == 'gpu':
+            self.args.precision = 16
+            self._set_n_accummulated_grad_batches()
+                
+            # You LR*(gradient/gpus), and therefore you need to multiply your given LR with the number of gpus to get the effective LR
+            self.args.learning_rate = self.args.learning_rate / self.args.devices
+            if self.args.devices > 1:
+                self.args.strategy = DDPPlugin(find_unused_parameters=False)
+            
         else:
             self.args.accumulate_grad_batches = 1
-
+            
         self.args.train_batch_size = self.args.max_fit_batch_size  # We set the training batch size to be the max possible batch size
-        self.args.max_steps = self.args.num_training_steps  # We set the training batch size to be the max possible steps
-
-        # You LR*(gradient/gpus), and therefore you need to multiply your given LR with the number of gpus to get the effective LR
-        self.args.learning_rate = self.args.learning_rate #/ self.args.gpu_count 
-
-        self.args.warmup_steps = int(self.args.max_steps * 0.05)
+        self.args.max_steps = self.args.num_training_steps  # We set the training batch size to be the max possible steps        
 
     def set_trainer_args(self):
         """
@@ -122,8 +106,7 @@ class PrepareArguments:
         
         
         self.set_vocab_args()
-        self.set_gpus()
-        self.set_gpus_settings()
+        self.set_device_arguments()
         self.set_trainer_args()
         
         return ModelArguments(program_args='', trainer_args=self.trainer_args, model_specific_args=self.args)

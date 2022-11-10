@@ -21,7 +21,7 @@ class AbLang(torch.nn.Module):
         n_encoder_blocks,
         padding_tkn,
         mask_tkn,
-        layer_norm_eps: float = 1e-05,
+        layer_norm_eps: float = 1e-12,
         dropout: float = 0.0, 
         use_tkn_dropout: bool = False,
     ):
@@ -59,7 +59,6 @@ class AbLang(torch.nn.Module):
             likelihoods = self.AbHead(representations.last_hidden_states)
             return likelihoods
     
-    @property
     def get_aa_embeddings(self):
         "Extracts the trained aa_embeddings."
         return self.AbRep.aa_embed_layer
@@ -78,7 +77,7 @@ class AbRep(torch.nn.Module):
         n_encoder_blocks,
         padding_tkn,
         mask_tkn,
-        layer_norm_eps: float = 1e-05,
+        layer_norm_eps: float = 1e-12,
         dropout: float = 0.0, 
         use_tkn_dropout: bool = False,
     ):
@@ -158,7 +157,7 @@ class AbHead(torch.nn.Module):
         vocab_size,
         hidden_embed_size,
         weights,
-        layer_norm_eps: float = 1e-05,
+        layer_norm_eps: float = 1e-12,
     ):
         super().__init__()
         

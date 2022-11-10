@@ -10,20 +10,17 @@ class AbLangPaired_v1(pl.LightningModule):
 
         parser.add_argument('--n_encoder_blocks', type=int, default=1, help='Number of encoder blocks.')
         parser.add_argument('--hidden_embed_size', type=int, default=768, help='Representation (hidden) size.')
-        #parser.add_argument('--intermediate_size', type=int, default=4*768, help='Intermediate (hidden) size.')
         parser.add_argument('--n_attn_heads', type=int, default=12)
         parser.add_argument('--dropout', type=float, default=0.1)
         parser.add_argument('--use_tkn_dropout', type=strtobool, default=False)
 
-        parser.add_argument('--adam_epsilon', type=float, default=1e-7, help='Adam Epsilon.')
         parser.add_argument('--mask_percent', type=float, default=.15, help='Percentage to mask.')
         parser.add_argument('--variable_masking', type=strtobool, default=False, help='Random uniform masking between 0 and mask_percent for each batch.')
-        
+        parser.add_argument('--mask_technique', type=str, default="random", help='masking technique to use. {standard, standard-sl_mask}')
         
         parser.add_argument('--initializer_range', type=float, default=0.02)
         parser.add_argument('--layer_norm_eps', type=float, default=1e-12)
-        parser.add_argument('--weight_decay', type=float, default=0.01)
-        parser.add_argument('--adam_betas', default=[0.9,0.98])
+
 
         #max_grad_norm: 1
         #hparams.sync_batchnorm=True # Slower training, but might improve training
@@ -35,17 +32,24 @@ class AbLangPaired_v1(pl.LightningModule):
     def add_training_specific_args(parent_parser):
         parser = parent_parser.add_argument_group("AbLangPaired")
         parser.add_argument("--data_path", type=str, default='../data/feb2022_5_data')
-        parser.add_argument('--out_path', type=str, default="/data/iraqbabbler/olsen/Documents/projects/AbLang/train_ablang_paired/reports")
-
+        parser.add_argument('--out_path', type=str, default="/data/iraqbabbler/olsen/Documents/projects/AbLang/model-catalogue/train_ablang_pair/reports/models")
+        parser.add_argument('--cpus', type=int, default=1, help='Number of cpus to use on data handling (4xGPUs is the recommended). \
+                                                                    0 uses the main process to load the data.')
 
         parser.add_argument('--max_fit_batch_size', type=int, default=256, help='Max batch size that fits in GPU memory.')
         parser.add_argument('--effective_batch_size', type=int, default=4_096*2, help='Effective batch size - The real batch size.')
         parser.add_argument('--num_training_steps', type=int, default=1000, help='Number of training steps.')
+        parser.add_argument('--warmup_steps', type=int, default=2000, help='Number of warm-up steps.')
+        
         parser.add_argument('--learning_rate', type=float, default=2e-04, help='Learning rate')
         parser.add_argument('--cdr3_focus', type=float, default=1, help='Used to increase the chance of masking the CDR3 region. \
                                                                         1 is same as other residues, \
                                                                         2 is 2 times the chance, \
-                                                                        3 is 3 times the chance, etc..')
+                                                                        3 is 3 times the chance, etc..')        
+        parser.add_argument('--weight_decay', type=float, default=0.01)
+        parser.add_argument('--adam_epsilon', type=float, default=1e-8, help='Adam Epsilon.')
+        parser.add_argument('--adam_betas', default=[0.9,0.98])
+        
         parser.add_argument('--seed', type=int, default=42, help='Random seed.')
         parser.add_argument('--eval_batch_size', type=int, default=10_000)
         parser.add_argument('--over_sample_data', type=int, default=0)

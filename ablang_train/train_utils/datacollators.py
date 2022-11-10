@@ -9,7 +9,6 @@ class ABcollator():
     This collator creates; 
     1. masked input data
     2. labels with only masks visible
-    3. attention_mask based on masking
     
     Padded tokens are also masked.
     """
@@ -82,14 +81,13 @@ def generate_masked_sequences(tkn_sequences,
     stop_start_mask = ((tkn_sequences == cls_tkn) | (tkn_sequences == sep_tkn))
     attention_mask = tkn_sequences.eq(pad_tkn)
     
-    allowed_mask = get_allowed_mask(attention_mask, stop_start_mask, mask_technique, mask_num)
-    
-    
     if mask_num == 0: # This is for validation cases
         masked_sequences = tkn_sequences.clone()
         target_sequences = tkn_sequences.clone()
         target_sequences[attention_mask] = -100
         return masked_sequences, target_sequences
+    
+    allowed_mask = get_allowed_mask(attention_mask, stop_start_mask, mask_technique, mask_num)
 
     idx_change, _, idx_mask = get_indexes(
         allowed_mask, 
@@ -159,7 +157,7 @@ def get_indexes(allowed_mask,
         idx = start_idx+step_idx
 
     
-    n_change = int(idx.shape[1]*change_percent)
-    n_leave = int(idx.shape[1]*leave_percent)
+    n_change = max(int(idx.shape[1]*change_percent), 1)
+    n_leave  = max(int(idx.shape[1]*leave_percent ), 1)
 
     return torch.split(idx, split_size_or_sections=[n_change, n_leave, idx.shape[-1] - (n_change +n_leave)], dim=1)

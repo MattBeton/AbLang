@@ -1,19 +1,19 @@
-from .embeddings import plot_Ab_embeddings
-#from .loss_test import log_valuation_loss, log_restoring_sequence
-
+from .eval_plots import plot_aa_embeddings
+from .seq_restoration import log_restoring_sequence
+from .loss_and_perplexity import LossAndPerplexity
 
 class Evaluations:
     
-    def __init__(self):
+    def __init__(self, tokenizer, hparams):
         
-        pass
+        self.tokenizer = tokenizer
+        self.hparams = hparams
+        
+        self.loss_n_perplexity = LossAndPerplexity(tokenizer, hparams)
     
     
     def __call__(self, trainer, val_step_outputs=''):
-        
-        
-        #log_valuation_loss(trainer, val_step_outputs)
-        #log_restoring_sequence(trainer)
-        
-        plot_Ab_embeddings(trainer)
+                
+        plot_aa_embeddings(trainer)
+        log_restoring_sequence(trainer)
         

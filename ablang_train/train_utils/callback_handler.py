@@ -12,7 +12,7 @@ class CallbackHandler:
     def __init__(self, 
                  save_step_frequency=100, 
                  progress_refresh_rate=0, 
-                 outpath="/data/iraqbabbler/olsen/Documents/projects/AbLang/train_ablang_paired/reports"):
+                 outpath="/data/iraqbabbler/olsen/Documents/projects/AbLang/model-catalogue/train_ablang_pair/reports/models"):
         
         self.callbacks = []
         
