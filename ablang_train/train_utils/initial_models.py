@@ -32,7 +32,7 @@ class AbLangPaired_v1(pl.LightningModule):
     def add_training_specific_args(parent_parser):
         parser = parent_parser.add_argument_group("AbLangPaired")
         parser.add_argument("--data_path", type=str, default='../data/feb2022_5_data')
-        parser.add_argument('--out_path', type=str, default="/data/iraqbabbler/olsen/Documents/projects/AbLang/model-catalogue/train_ablang_pair/reports/models")
+        parser.add_argument('--out_path', type=str, default="/data/iraqbabbler/olsen/Documents/projects/AbLang/model-catalogue/paired-ablang/train_ablang_pair/reports/models")
         parser.add_argument('--cpus', type=int, default=1, help='Number of cpus to use on data handling (4xGPUs is the recommended). \
                                                                     0 uses the main process to load the data.')
 

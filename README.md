@@ -16,7 +16,7 @@ This installs all the requirements needed to run the training code.
 
 # Start training
 
-In the (notebook folder)[https://github.com/TobiasHeOl/ablang-train/blob/main/notebooks/explore-training.ipynb] there is a guide for how to run the pieces of code separately, while the run_training.py in the ablang_train folder is a single script for training.
+In the [notebook folder](https://github.com/TobiasHeOl/ablang-train/blob/main/notebooks/explore-training.ipynb) there is a guide for how to run the pieces of code separately, while the run_training.py in the ablang_train folder is a single script for training.
 
 # Data
 
