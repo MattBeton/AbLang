@@ -58,14 +58,16 @@ class LossAndPerplexity:
         
         model = trainer.ablang
         
-        tokenized_seqs = self.tokenizer(sequences, pad=True)
+        tokenized_seqs = self.tokenizer(sequences, pad=True, add_extra_tkns=False, device=trainer.device)
 
         repeat_tokenized_seqs = tokenized_seqs.repeat(tokenized_seqs.size(-1), 1)
         diagonal_mask = torch.ones(tokenized_seqs.size(-1)-1).diag(1).repeat(tokenized_seqs.size(0), 1)
 
         masked_seqs = repeat_tokenized_seqs.masked_fill(diagonal_mask == 1, self.mask_tkn)
 
-        labels = repeat_tokenized_seqs.masked_fill(masked_seqs != self.mask_tkn, -100).where((repeat_tokenized_seqs!=22) * (repeat_tokenized_seqs!=21), torch.tensor(-100))
+        labels = repeat_tokenized_seqs.masked_fill(masked_seqs != self.mask_tkn, -100).where(
+            (repeat_tokenized_seqs!=22) * (repeat_tokenized_seqs!=21) * (repeat_tokenized_seqs!=25), torch.tensor(-100)
+        )
 
         logits = model(masked_seqs)
 
