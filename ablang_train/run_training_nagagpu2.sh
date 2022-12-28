@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --wait-all-nodes=1                      # Wait until all nodes are ready (other breaks when using multiple gpus)
 #SBATCH --mem=40000                             # total memory (in MB) ### commented out
-#SBATCH --gres=gpu:1
+#SBATCH --gpus-per-node=2
 #SBATCH --ntasks-per-node=1                     # number of  tasks which can run simultaneously
 #SBATCH --nodes=1                               # number of nodes - you would usually only use nagagpu01 or 02
 #SBATCH --chdir=/homes/olsen/                   # From where you want the job to be run

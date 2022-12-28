@@ -80,7 +80,7 @@ class PrepareArguments:
             # You LR*(gradient/gpus), and therefore you need to multiply your given LR with the number of gpus to get the effective LR
             self.args.learning_rate = self.args.learning_rate / self.args.devices
             if self.args.devices > 1:
-                self.args.strategy = DDPPlugin(find_unused_parameters=False)
+                self.args.strategy = DDPPlugin() # find_unused_parameters=False
             
         else:
             self.args.accumulate_grad_batches = 1

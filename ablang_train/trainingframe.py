@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 import math
 
 from ablang_train import Evaluations
-from ablang_train.train_utils.schedulers import get_linear_schedule_with_warmup
+from ablang_train.train_utils.schedulers import get_linear_schedule_with_warmup, get_cosine_schedule_with_warmup
 
 class TrainingFrame(pl.LightningModule):
     """
@@ -116,7 +116,7 @@ class TrainingFrame(pl.LightningModule):
                                      weight_decay=self.hparams.weight_decay, 
                                      )
         
-        scheduler = get_linear_schedule_with_warmup(optimizer, 
+        scheduler = get_cosine_schedule_with_warmup(optimizer, 
                                                     num_warmup_steps=self.hparams.warmup_steps,
                                                     num_training_steps=self.hparams.num_training_steps
                                                    )
