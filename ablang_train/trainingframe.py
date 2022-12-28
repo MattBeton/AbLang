@@ -20,7 +20,7 @@ class TrainingFrame(pl.LightningModule):
         self.save_hyperparameters(conf) # saves to self.hparams
         
         self.loss_fn = torch.nn.CrossEntropyLoss()
-        self.tokenizer = tokenizer(os.path.join(self.hparams.data_path,'vocab.json'))
+        self.tokenizer = tokenizer()
         
         self.ablang = model(
             vocab_size = self.hparams.vocab_size,
@@ -57,7 +57,6 @@ class TrainingFrame(pl.LightningModule):
         tokens, labels = dataset['input'], dataset['labels']
         
         logits = self(tokens)
-
         loss = self.loss_fn(logits.view(-1, self.hparams.vocab_size), labels)
         
         # Must clear cache at regular interval
@@ -77,7 +76,6 @@ class TrainingFrame(pl.LightningModule):
     def validation_step(self, dataset, batch_idx): # Updated every step when validation is called
         
         tokens, labels = dataset['input'], dataset['labels']
-        
         loss, perplexity = self.run_evaluations.loss_n_perplexity.calculate_perplexity_fast(self, dataset['sequences'])
 
         return {'val_loss': loss, 'perplexity':perplexity,}

@@ -14,8 +14,9 @@ class ABcollator():
     """
     def __init__(self, tokenizer, 
                  pad_tkn=21, 
-                 cls_tkn=0, 
-                 sep_tkn=22, 
+                 start_tkn=0, 
+                 end_tkn=22,
+                 sep_tkn=25, 
                  mask_tkn=23,
                  mask_percent=.15, 
                  mask_variable=False, 
@@ -24,7 +25,8 @@ class ABcollator():
         
         self.tokenizer = tokenizer
         self.pad_tkn = pad_tkn 
-        self.cls_tkn = cls_tkn 
+        self.start_tkn = start_tkn 
+        self.end_tkn = end_tkn 
         self.sep_tkn = sep_tkn 
         self.mask_tkn = mask_tkn
         self.mask_percent = mask_percent
@@ -49,36 +51,40 @@ class ABcollator():
         
     def __call__(self, batch):
         
-        tkn_sequences = self.tokenizer(batch, pad=True)
+        tkn_sequences = self.tokenizer(batch, add_extra_tkns=False, pad=True)
 
         mask_num, mask_technique = self.get_mask_arguments(tkn_sequences)
 
-        masked_sequences, target_tkns = generate_masked_sequences(tkn_sequences, 
-                                                                  pad_tkn=self.pad_tkn, 
-                                                                  cls_tkn=self.cls_tkn, 
-                                                                  sep_tkn=self.sep_tkn, 
-                                                                  mask_tkn=self.mask_tkn,
-                                                                  mask_num=mask_num, 
-                                                                  cdr3_focus=self.cdr3_focus,
-                                                                  mask_technique = mask_technique
-                                                                 )
+        masked_sequences, target_tkns = generate_masked_sequences(
+            tkn_sequences, 
+            pad_tkn = self.pad_tkn,
+            start_tkn = self.start_tkn,
+            end_tkn = self.end_tkn,
+            sep_tkn = self.sep_tkn,
+            mask_tkn = self.mask_tkn,
+            mask_num=mask_num, 
+            cdr3_focus=self.cdr3_focus,
+            mask_technique = mask_technique
+        )
         
         return {'input':masked_sequences, 'labels':target_tkns.view(-1), 'sequences':batch}
 
 
-def generate_masked_sequences(tkn_sequences, 
-                           pad_tkn=21, 
-                           cls_tkn=0, 
-                           sep_tkn=22, 
-                           mask_tkn=23, 
-                           mask_num=15, 
-                           cdr3_focus=1,
-                           mask_technique='random'
-                          ):
+def generate_masked_sequences(
+    tkn_sequences, 
+    pad_tkn=21, 
+    start_tkn=0, 
+    end_tkn=22,
+    sep_tkn=25, 
+    mask_tkn=23, 
+    mask_num=15, 
+    cdr3_focus=1,
+    mask_technique='random'
+):
     """
     Same as create_BERT_data, but also keeps start and stop.
     """
-    stop_start_mask = ((tkn_sequences == cls_tkn) | (tkn_sequences == sep_tkn))
+    stop_start_mask = ((tkn_sequences == start_tkn) | (tkn_sequences == sep_tkn) | (tkn_sequences == end_tkn))
     attention_mask = tkn_sequences.eq(pad_tkn)
     
     if mask_num == 0: # This is for validation cases
@@ -89,7 +95,7 @@ def generate_masked_sequences(tkn_sequences,
     
     allowed_mask = get_allowed_mask(attention_mask, stop_start_mask, mask_technique, mask_num)
 
-    idx_change, _, idx_mask = get_indexes(
+    idx_change, idx_leave, idx_mask = get_indexes(
         allowed_mask, 
         mask_num=mask_num, 
         change_percent=.1, 
@@ -104,6 +110,8 @@ def generate_masked_sequences(tkn_sequences,
     
     target_sequences = tkn_sequences.clone()
     stop_start_mask.scatter_(1, idx_mask, 1)
+    stop_start_mask.scatter_(1, idx_change, 1)
+    stop_start_mask.scatter_(1, idx_leave, 1)
     target_sequences[~stop_start_mask.long().bool()] = -100
     
     return masked_sequences, target_sequences
@@ -155,8 +163,7 @@ def get_indexes(allowed_mask,
         step_idx = torch.linspace(0, mask_num-1, steps=mask_num, dtype=int).repeat(allowed_mask.shape[0], 1)
         
         idx = start_idx+step_idx
-
-    
+        
     n_change = max(int(idx.shape[1]*change_percent), 1)
     n_leave  = max(int(idx.shape[1]*leave_percent ), 1)
 

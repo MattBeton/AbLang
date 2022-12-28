@@ -8,10 +8,11 @@ import numpy as np
 import pytorch_lightning as pl
 from pytorch_lightning.plugins import DDPPlugin
 
+from ablang_train import ablang_vocab
 from .initial_models import AbLangPaired_v1
 
 
-def parse_args(args=None, is_test=False):
+def ablang_parse_args(args=None, is_test=False):
     """
     Creates a parser. Then adds all pytorch-lightning arguments to it. Then adds model specific arguments to it.
     """
@@ -48,15 +49,13 @@ class PrepareArguments:
         self.args = args
     
     def set_vocab_args(self):
-
-        with open(os.path.join(self.args.data_path, 'vocab.json')) as vocab_file: 
-            vocab = json.load(vocab_file)
             
-        self.args.pad_tkn = vocab['-']
-        self.args.cls_tkn = vocab['<']
-        self.args.sep_tkn = vocab['>']
-        self.args.mask_tkn = vocab['*']
-        self.args.vocab_size = len(vocab)
+        self.args.pad_tkn = ablang_vocab['-']
+        self.args.start_tkn = ablang_vocab['<']
+        self.args.end_tkn = ablang_vocab['>']
+        self.args.sep_tkn = ablang_vocab['|']
+        self.args.mask_tkn = ablang_vocab['*']
+        self.args.vocab_size = len(ablang_vocab)
 
     def _set_n_accummulated_grad_batches(self):
         

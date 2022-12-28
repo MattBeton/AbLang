@@ -7,39 +7,40 @@ import pytorch_lightning as pl
 from .datacollators import ABcollator
 
 
-class MyDataModule(pl.LightningDataModule):
+class AbDataModule(pl.LightningDataModule):
 
     def __init__(self, data_hparams, tokenizer):
         super().__init__()
         self.data_hparams = data_hparams
-        self.tokenizer = tokenizer(os.path.join(data_hparams.data_path,'vocab.json'))
-
-        
+        self.tokenizer = tokenizer()        
         
     def setup(self, stage=None): # called on every GPU
         
-        self.traincollater = ABcollator(self.tokenizer, 
-                                        pad_tkn=self.data_hparams.pad_tkn,
-                                        cls_tkn=self.data_hparams.cls_tkn, 
-                                        sep_tkn=self.data_hparams.sep_tkn,
-                                        mask_tkn=self.data_hparams.mask_tkn,
-                                        mask_percent=self.data_hparams.mask_percent,
-                                        mask_variable=self.data_hparams.variable_masking,
-                                        cdr3_focus=self.data_hparams.cdr3_focus,
-                                        mask_technique=self.data_hparams.mask_technique,
-                                       )
+        self.traincollater = ABcollator(
+            self.tokenizer, 
+            pad_tkn = self.data_hparams.pad_tkn,
+            start_tkn = self.data_hparams.start_tkn,
+            end_tkn = self.data_hparams.end_tkn,
+            sep_tkn = self.data_hparams.sep_tkn,
+            mask_tkn = self.data_hparams.mask_tkn,
+            mask_percent=self.data_hparams.mask_percent,
+            mask_variable=self.data_hparams.variable_masking,
+            cdr3_focus=self.data_hparams.cdr3_focus,
+            mask_technique=self.data_hparams.mask_technique,
+        )
         
-        self.evalcollater = ABcollator(self.tokenizer, 
-                                       pad_tkn=self.data_hparams.pad_tkn,
-                                       cls_tkn=self.data_hparams.cls_tkn, 
-                                       sep_tkn=self.data_hparams.sep_tkn,
-                                       mask_tkn=self.data_hparams.mask_tkn, 
-                                       mask_percent=self.data_hparams.mask_percent,
-                                       mask_variable=self.data_hparams.variable_masking,
-                                       cdr3_focus=1.,
-                                       mask_technique=self.data_hparams.mask_technique,
-                                      )
-        
+        self.evalcollater = ABcollator(
+            self.tokenizer, 
+            pad_tkn = self.data_hparams.pad_tkn,
+            start_tkn = self.data_hparams.start_tkn,
+            end_tkn = self.data_hparams.end_tkn,
+            sep_tkn = self.data_hparams.sep_tkn,
+            mask_tkn = self.data_hparams.mask_tkn,
+            mask_percent=self.data_hparams.mask_percent,
+            mask_variable=self.data_hparams.variable_masking,
+            cdr3_focus=1.,
+            mask_technique=self.data_hparams.mask_technique,
+        )
         
         self.train = self.get_data(
             file_path=os.path.join(self.data_hparams.data_path,'train_data'),
@@ -70,19 +71,19 @@ class MyDataModule(pl.LightningDataModule):
         
         if os.path.isfile(os.path.join(file_path,'heavy_chains.txt')):
             with open(os.path.join(file_path,'heavy_chains.txt'), encoding="utf-8") as f:
-                heavychain = [line + '>' for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
+                heavychain = [line for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
         else:
             heavychain = []
             
         if os.path.isfile(os.path.join(file_path,'light_chains.txt')):
             with open(os.path.join(file_path,'light_chains.txt'), encoding="utf-8") as f:
-                lightchain = ['>' + line for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
+                lightchain = [line for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
         else:
             lightchain = []
             
         if os.path.isfile(os.path.join(file_path,'paired_chains.txt')):
             with open(os.path.join(file_path,'paired_chains.txt'), encoding="utf-8") as f:
-                pairedchain = [line.replace('|','>') for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
+                pairedchain = [line for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
         else:
             pairedchain = []
             

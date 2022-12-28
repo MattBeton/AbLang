@@ -1,22 +1,22 @@
 import torch
 
 
-heavy_seq = 'EVQLVESGPGLVQPGKSLRLSCVASGFTFSGYGMHWVRQAPGKGLEWIALIIYDESNKYYADSVKGRFTISRDNSKNTLYLQMSSLRAEDTAVFYCAKVKFYDPTAPNDYWGQGTLVTVSS'
-light_seq = 'DIVMTQTPSTLSASVGDRVTLTCKASQDISYLAWYQQKPGKAPKKLIYAASSLQSGVPSRFSGSGSGTDFTLTISSLQPEDFATYYCLQQNSNWTFGQGTKVDIK'
+heavy_seq = '<EVQLVESGPGLVQPGKSLRLSCVASGFTFSGYGMHWVRQAPGKGLEWIALIIYDESNKYYADSVKGRFTISRDNSKNTLYLQMSSLRAEDTAVFYCAKVKFYDPTAPNDYWGQGTLVTVSS>'
+light_seq = '<DIVMTQTPSTLSASVGDRVTLTCKASQDISYLAWYQQKPGKAPKKLIYAASSLQSGVPSRFSGSGSGTDFTLTISSLQPEDFATYYCLQQNSNWTFGQGTKVDIK>'
 
 
 
 def log_restoring_sequence(trainer):
 
-        aaPreds, aaPreds50 = restore_seq(trainer, seq_to_restore = heavy_seq+'>')       
+        aaPreds, aaPreds50 = restore_seq(trainer, seq_to_restore = heavy_seq+'|')       
         trainer.logger.experiment['evaluation/heavy_reconstruct'].log(str(aaPreds[0]))
         trainer.logger.experiment['evaluation/heavy_reconstruct_50'].log(str(aaPreds50[0]))
         
-        aaPreds, aaPreds50 = restore_seq(trainer, seq_to_restore = '>'+light_seq)       
+        aaPreds, aaPreds50 = restore_seq(trainer, seq_to_restore = '|'+light_seq)       
         trainer.logger.experiment['evaluation/light_reconstruct'].log(str(aaPreds[0]))
         trainer.logger.experiment['evaluation/light_reconstruct_50'].log(str(aaPreds50[0]))
 
-        aaPreds, aaPreds50 = restore_seq(trainer, seq_to_restore = heavy_seq+'>'+light_seq)       
+        aaPreds, aaPreds50 = restore_seq(trainer, seq_to_restore = heavy_seq+'|'+light_seq)       
         trainer.logger.experiment['evaluation/paired_reconstruct'].log(str(aaPreds[0]))
         trainer.logger.experiment['evaluation/paired_reconstruct_50'].log(str(aaPreds50[0]))
         
@@ -30,7 +30,7 @@ def restore_seq(trainer, seq_to_restore):
     tokenizer = trainer.tokenizer
     
     with torch.no_grad():
-        tokenPreds = model(tokenizer([seq_to_restore], pad=True, device=trainer.device))
+        tokenPreds = model(tokenizer([seq_to_restore], pad=True, add_extra_tkns=False, device=trainer.device))
     
     tokenMAX = torch.max(torch.nn.Softmax(dim=-1)(tokenPreds), -1)
 

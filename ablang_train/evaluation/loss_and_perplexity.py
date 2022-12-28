@@ -10,15 +10,17 @@ class LossAndPerplexity:
         self.vocab_size = hparams.vocab_size
         self.tokenizer = tokenizer
         
-        self.fast_collater = ABcollator(tokenizer, 
-                                   pad_tkn=hparams.pad_tkn,
-                                   cls_tkn=hparams.cls_tkn, 
-                                   sep_tkn=hparams.sep_tkn,
-                                   mask_tkn=hparams.mask_tkn, 
-                                   mask_percent=hparams.mask_percent,
-                                   cdr3_focus=1.,
-                                   mask_technique='random',
-                                  )
+        self.fast_collater = ABcollator(
+            tokenizer, 
+            pad_tkn = hparams.pad_tkn,
+            start_tkn = hparams.start_tkn,
+            end_tkn = hparams.end_tkn,
+            sep_tkn = hparams.sep_tkn,
+            mask_tkn = hparams.mask_tkn,
+            mask_percent=hparams.mask_percent,
+            cdr3_focus=1.,
+            mask_technique='random',
+        )
         
     def calculate_perplexity_fast(self, trainer, sequences):
         """

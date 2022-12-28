@@ -42,5 +42,5 @@ srun python3 run_training.py --name ablang \
                             --gpus 1 \
                             --num_training_steps 8500 \
                             --num_hidden_layers 4 \
-                            --dataDir /homes/olsen/multi_gpu/data/11022022_data
+                            --dataDir /vols/bitbucket/olsen/processed_oas_data/AbData-nov2022
 
