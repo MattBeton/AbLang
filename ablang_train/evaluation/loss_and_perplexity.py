@@ -38,8 +38,8 @@ class LossAndPerplexity:
 
         tokenized_seqs = self.fast_collater(sequences)
 
-        logits = model(tokenized_seqs['input'])
-        loss = trainer.loss_fn(logits.view(-1, self.vocab_size), tokenized_seqs['labels'])
+        logits = model(tokenized_seqs['input'].to(trainer.device))
+        loss = trainer.loss_fn(logits.view(-1, self.vocab_size), tokenized_seqs['labels'].to(trainer.device))
         
         return loss, torch.exp(loss)
     
