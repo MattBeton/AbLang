@@ -59,7 +59,7 @@ class PrepareArguments:
 
     def _set_n_accummulated_grad_batches(self):
         
-        gpu_batch_size = self.args.effective_batch_size // self.args.devices # Spread effective batch size across GPUs and gradient accumulation
+        gpu_batch_size = self.args.effective_batch_size // int(self.args.devices) # Spread effective batch size across GPUs and gradient accumulation
         
         if int(gpu_batch_size // self.args.max_fit_batch_size) > 1: # Calculates how many times the gradients needs to be accumulated
             self.args.accumulate_grad_batches = int(gpu_batch_size // self.args.max_fit_batch_size)
@@ -79,8 +79,8 @@ class PrepareArguments:
             self._set_n_accummulated_grad_batches()
                 
             # You LR*(gradient/gpus), and therefore you need to multiply your given LR with the number of gpus to get the effective LR
-            self.args.learning_rate = self.args.learning_rate / self.args.devices
-            if self.args.devices > 1:
+            self.args.learning_rate = self.args.learning_rate / int(self.args.devices)
+            if int(self.args.devices) > 1:
                 self.args.strategy = "ddp" #DDPPlugin() # find_unused_parameters=False
             
         else:
