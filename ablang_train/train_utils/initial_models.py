@@ -51,7 +51,7 @@ class AbLangPaired_v1(pl.LightningModule):
         parser.add_argument('--adam_betas', default=[0.9,0.98])
         
         parser.add_argument('--seed', type=int, default=42, help='Random seed.')
-        parser.add_argument('--eval_batch_size', type=int, default=10_000)
+        parser.add_argument('--eval_batch_size', type=int, default=100)
         parser.add_argument('--over_sample_data', type=int, default=0)
         
         return parent_parser
