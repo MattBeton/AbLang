@@ -74,7 +74,7 @@ class PrepareArguments:
         https://forums.pytorchlightning.ai/t/effective-learning-rate-and-batch-size-with-lightning-in-ddp/101/8
         """ 
         
-        if self.args.accelerator == 'gpu':
+        if self.args.accelerator == 'cuda':
             self.args.precision = 16
             self._set_n_accummulated_grad_batches()
                 
