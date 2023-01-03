@@ -51,7 +51,7 @@ class ABcollator():
         
     def __call__(self, batch):
         
-        tkn_sequences = self.tokenizer(batch, add_extra_tkns=False, pad=True)
+        tkn_sequences = self.tokenizer(batch, w_extra_tkns=False, pad=True)
 
         mask_num, mask_technique = self.get_mask_arguments(tkn_sequences)
 

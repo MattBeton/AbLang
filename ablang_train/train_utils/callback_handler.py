@@ -104,4 +104,4 @@ class CheckpointEveryNSteps(pl.Callback):
                 
             #### SAVE THE USED VOCAB FILE #####
             with open(os.path.join(correct_dirpath, 'vocab.json'), 'w', encoding='utf-8') as f:
-                json.dump(tokenizer.vocab_to_token, f, ensure_ascii=False)
+                json.dump(tokenizer.aa_to_token, f, ensure_ascii=False)

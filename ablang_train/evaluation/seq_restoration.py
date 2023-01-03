@@ -30,14 +30,14 @@ def restore_seq(trainer, seq_to_restore):
     tokenizer = trainer.tokenizer
     
     with torch.no_grad():
-        tokenPreds = model(tokenizer([seq_to_restore], pad=True, add_extra_tkns=False, device=trainer.device))
+        tokenPreds = model(tokenizer([seq_to_restore], pad=True, w_extra_tkns=False, device=trainer.device))
     
     tokenMAX = torch.max(torch.nn.Softmax(dim=-1)(tokenPreds), -1)
 
-    aaPreds = tokenizer(tokenMAX[1], encode=False)
+    aaPreds = tokenizer(tokenMAX[1], mode="decode")
 
     unkMatrix = torch.zeros(tokenMAX[0].shape, dtype=torch.long, device=trainer.device) + 21
     
-    aaPreds50 = ['-'.join(tokenizer(torch.where(tokenMAX[0]<=.5, unkMatrix, tokenMAX[1]).detach(), encode=False)[0].split('<unk>'))]
+    aaPreds50 = ['-'.join(tokenizer(torch.where(tokenMAX[0]<=.5, unkMatrix, tokenMAX[1]).detach(), mode="decode")[0].split('<unk>'))]
 
     return aaPreds, aaPreds50

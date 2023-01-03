@@ -18,7 +18,7 @@ def plot_aa_embeddings(trainer):
     aa_embeds = aa_embeds[desired_tokens]
     aa_pca = PCA(n_components=2, svd_solver='full').fit_transform(aa_embeds)
     
-    vocabs = trainer.tokenizer.vocab_to_aa
+    vocabs = trainer.tokenizer.token_to_aa
     vocabs = [vocabs[key] for key in desired_tokens]
     vocab_w_description = {'R':'Charged basic','H':'Charged basic','K':'Charged basic',
                     'D':'Charged acidic','E':'Charged acidic',
