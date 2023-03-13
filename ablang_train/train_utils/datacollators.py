@@ -12,16 +12,21 @@ class ABcollator():
     
     Padded tokens are also masked.
     """
-    def __init__(self, tokenizer, 
-                 pad_tkn=21, 
-                 start_tkn=0, 
-                 end_tkn=22,
-                 sep_tkn=25, 
-                 mask_tkn=23,
-                 mask_percent=.15, 
-                 mask_variable=False, 
-                 cdr3_focus=1, 
-                 mask_technique='random'):
+    def __init__(
+        self, 
+        tokenizer, 
+        pad_tkn=21, 
+        start_tkn=0, 
+        end_tkn=22,
+        sep_tkn=25, 
+        mask_tkn=23,
+        mask_percent=.15, 
+        mask_variable=False, 
+        cdr3_focus=1, 
+        mask_technique='random',
+        change_percent=.1,
+        leave_percent=.1,
+    ):
         
         self.tokenizer = tokenizer
         self.pad_tkn = pad_tkn 
@@ -33,6 +38,8 @@ class ABcollator():
         self.mask_variable = mask_variable
         self.cdr3_focus = cdr3_focus
         self.mask_technique = mask_technique
+        self.change_percent = change_percent
+        self.leave_percent = leave_percent
         
     def get_mask_arguments(self, tkn_sequences):
         
@@ -64,7 +71,9 @@ class ABcollator():
             mask_tkn = self.mask_tkn,
             mask_num=mask_num, 
             cdr3_focus=self.cdr3_focus,
-            mask_technique = mask_technique
+            mask_technique = mask_technique,
+            change_percent = self.change_percent,
+            leave_percent = self.leave_percent,
         )
         
         return {'input':masked_sequences, 'labels':target_tkns.view(-1), 'sequences':batch}
@@ -79,7 +88,9 @@ def generate_masked_sequences(
     mask_tkn=23, 
     mask_num=15, 
     cdr3_focus=1,
-    mask_technique='random'
+    mask_technique='random',
+    change_percent=.1,
+    leave_percent=.1,
 ):
     """
     Same as create_BERT_data, but also keeps start and stop.
@@ -98,8 +109,8 @@ def generate_masked_sequences(
     idx_change, idx_leave, idx_mask = get_indexes(
         allowed_mask, 
         mask_num=mask_num, 
-        change_percent=.1, 
-        leave_percent=.1, 
+        change_percent=change_percent, 
+        leave_percent=leave_percent, 
         cdr3_focus=cdr3_focus, 
         mask_technique=mask_technique
     )
@@ -165,6 +176,6 @@ def get_indexes(allowed_mask,
         idx = start_idx+step_idx
         
     n_change = max(int(idx.shape[1]*change_percent), 1)
-    n_leave  = max(int(idx.shape[1]*leave_percent ), 1)
+    n_leave  = max(int(idx.shape[1]*leave_percent ), 0)
 
-    return torch.split(idx, split_size_or_sections=[n_change, n_leave, idx.shape[-1] - (n_change +n_leave)], dim=1)
+    return torch.split(idx, split_size_or_sections=[n_change, n_leave, max(idx.shape[-1] - (n_change +n_leave), 0)], dim=1)

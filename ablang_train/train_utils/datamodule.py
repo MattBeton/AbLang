@@ -27,6 +27,8 @@ class AbDataModule(pl.LightningDataModule):
             mask_variable=self.data_hparams.variable_masking,
             cdr3_focus=self.data_hparams.cdr3_focus,
             mask_technique=self.data_hparams.mask_technique,
+            change_percent = self.data_hparams.change_percent,
+            leave_percent = self.data_hparams.leave_percent,
         )
         
         self.evalcollater = ABcollator(
@@ -40,6 +42,8 @@ class AbDataModule(pl.LightningDataModule):
             mask_variable=self.data_hparams.variable_masking,
             cdr3_focus=1.,
             mask_technique=self.data_hparams.mask_technique,
+            change_percent = self.data_hparams.change_percent,
+            leave_percent = self.data_hparams.leave_percent,
         )
         
         self.train = self.get_data(
