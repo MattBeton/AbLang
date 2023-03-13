@@ -62,15 +62,10 @@ class PrepareArguments:
         
         gpu_batch_size = self.args.effective_batch_size // self.args.devices # Spread effective batch size across GPUs and gradient accumulation
         
-        print(gpu_batch_size)
-        
         if int(gpu_batch_size // self.args.max_fit_batch_size) > 1: # Calculates how many times the gradients needs to be accumulated
             self.args.accumulate_grad_batches = int(gpu_batch_size // self.args.max_fit_batch_size)
             self.args.val_check_interval = int(self.args.val_check_interval * self.args.accumulate_grad_batches) # Adjust val check
-            self.args.num_training_steps = int(self.args.num_training_steps * self.args.accumulate_grad_batches) # Adjust training steps
-            
-            print(self.args.accumulate_grad_batches)
-            
+            self.args.num_training_steps = int(self.args.num_training_steps * self.args.accumulate_grad_batches) # Adjust training steps            
         
     def set_device_arguments(self):
         """
@@ -79,8 +74,6 @@ class PrepareArguments:
         The following link provides a discussion for setting effective batch size and learning rate:
         https://forums.pytorchlightning.ai/t/effective-learning-rate-and-batch-size-with-lightning-in-ddp/101/8
         """ 
-        
-        print(self.args.accelerator)
         
         if self.args.accelerator == 'cuda':
             self.args.precision = 16

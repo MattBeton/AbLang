@@ -6,6 +6,7 @@ import math
 
 from ablang_train import Evaluations
 from ablang_train.train_utils.schedulers import get_linear_schedule_with_warmup, get_cosine_schedule_with_warmup
+from ablang_train.train_utils.loss_fn import get_loss_fn
 
 class TrainingFrame(pl.LightningModule):
     """
@@ -19,7 +20,7 @@ class TrainingFrame(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters(conf) # saves to self.hparams
         
-        self.loss_fn = torch.nn.CrossEntropyLoss()
+        self.loss_fn = get_loss_fn(self.hparams.loss_fn)()#torch.nn.CrossEntropyLoss()   "Focal_Loss"
         self.tokenizer = tokenizer()
         
         self.ablang = model(

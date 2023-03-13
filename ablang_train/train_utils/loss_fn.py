@@ -17,7 +17,7 @@ class Focal_Loss(torch.nn.Module):
         self.reduce = reduce
         self.CrossEntropyLoss=torch.nn.CrossEntropyLoss(reduction='none')
 
-    def forward(self, inputs, targets):
+    def __call__(self, inputs, targets, *kwargs):
         if self.logits:
             BCE_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduce=False)
         else:

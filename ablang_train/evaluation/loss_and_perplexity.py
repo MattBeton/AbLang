@@ -10,6 +10,8 @@ class LossAndPerplexity:
         self.vocab_size = hparams.vocab_size
         self.tokenizer = tokenizer
         
+        self.CrossEntropyLoss=torch.nn.CrossEntropyLoss()
+        
         self.fast_collater = ABcollator(
             tokenizer, 
             pad_tkn = hparams.pad_tkn,
@@ -39,7 +41,7 @@ class LossAndPerplexity:
         tokenized_seqs = self.fast_collater(sequences)
 
         logits = model(tokenized_seqs['input'].to(trainer.device))
-        loss = trainer.loss_fn(logits.view(-1, self.vocab_size), tokenized_seqs['labels'].to(trainer.device))
+        loss = self.CrossEntropyLoss(logits.view(-1, self.vocab_size), tokenized_seqs['labels'].to(trainer.device))
         
         return loss, torch.exp(loss)
     
@@ -71,6 +73,6 @@ class LossAndPerplexity:
 
         logits = model(masked_seqs)
 
-        loss = trainer.loss_fn(logits.view(-1, self.vocab_size), labels.view(-1))
+        loss = self.CrossEntropyLoss(logits.view(-1, self.vocab_size), labels.view(-1))
 
         return loss, torch.exp(loss)
