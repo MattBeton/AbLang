@@ -14,6 +14,7 @@ class AbLangPaired_v1(pl.LightningModule):
         parser.add_argument('--dropout', type=float, default=0.1)
         parser.add_argument('--use_tkn_dropout', type=strtobool, default=False)
         parser.add_argument('--loss_fn', type=str, default="CrossEntropy_Loss")
+        parser.add_argument('--fl_gamma', type=int, default=2)
         
         parser.add_argument('--mask_percent', type=float, default=.15, help='Percentage to mask.')
         parser.add_argument('--variable_masking', type=strtobool, default=False, help='Random uniform masking between 0 and mask_percent for each batch.')

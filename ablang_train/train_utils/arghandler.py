@@ -6,7 +6,6 @@ import torch
 import numpy as np
 
 import pytorch_lightning as pl
-from pytorch_lightning.plugins import DDPPlugin
 
 from ablang_train import ablang_vocab
 from .initial_models import AbLangPaired_v1

@@ -35,7 +35,7 @@ class Focal_Loss(torch.nn.Module):
         
 class CrossEntropy_Loss():
     
-    def __init__(self):
+    def __init__(self, *kwargs):
         self.CrossEntropyLoss=torch.nn.CrossEntropyLoss(reduction='none')
             
     def __call__(self, preds, targets, reduce=True):
