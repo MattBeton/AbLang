@@ -20,7 +20,7 @@ class TrainingFrame(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters(conf) # saves to self.hparams
         
-        self.loss_fn = get_loss_fn(self.hparams.loss_fn)(gamma = self.hparams.fl_gamma) #torch.nn.CrossEntropyLoss()
+        self.loss_fn = get_loss_fn(self.hparams.loss_fn, gamma = self.hparams.fl_gamma)
         self.tokenizer = tokenizer()
         
         self.ablang = model(

@@ -4,8 +4,13 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 
-def get_loss_fn(loss_fn_name):
-    return globals()[loss_fn_name]
+def get_loss_fn(loss_fn_name, gamma = None):
+    
+    if loss_fn_name == "Focal_Loss":
+        return Focal_Loss(gamma = gamma)
+    
+    elif loss_fn_name == "CrossEntropy_Loss":
+        return torch.nn.CrossEntropyLoss()
 
 
 class Focal_Loss(torch.nn.Module):
