@@ -5,7 +5,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from .encoderblock import TransformerEncoder
+from .encoderblock import TransformerEncoder, get_activation_fn
 
 
 class AbLang(torch.nn.Module):
@@ -22,6 +22,7 @@ class AbLang(torch.nn.Module):
         padding_tkn,
         mask_tkn,
         layer_norm_eps: float = 1e-12,
+        a_fn: str = "gelu",
         dropout: float = 0.0, 
         use_tkn_dropout: bool = False,
     ):
@@ -35,6 +36,7 @@ class AbLang(torch.nn.Module):
             padding_tkn,
             mask_tkn,
             layer_norm_eps,
+            a_fn,
             dropout, 
             use_tkn_dropout,
         )       
@@ -43,6 +45,7 @@ class AbLang(torch.nn.Module):
             hidden_embed_size,
             self.AbRep.aa_embed_layer.weight,
             layer_norm_eps,
+            a_fn,
         )
         
     def forward(self, tokens, return_attn_weights=False, return_rep_layers=[]):
@@ -78,6 +81,7 @@ class AbRep(torch.nn.Module):
         padding_tkn,
         mask_tkn,
         layer_norm_eps: float = 1e-12,
+        a_fn: str = "gelu",
         dropout: float = 0.0, 
         use_tkn_dropout: bool = False,
     ):
@@ -97,6 +101,7 @@ class AbRep(torch.nn.Module):
                 n_attn_heads,
                 attn_dropout = dropout,
                 layer_norm_eps = layer_norm_eps,
+                a_fn = a_fn,
             ) for _ in range(n_encoder_blocks)]
         )
         self.layer_norm_after_encoder_blocks = nn.LayerNorm(hidden_embed_size, eps=layer_norm_eps)
@@ -158,12 +163,15 @@ class AbHead(torch.nn.Module):
         hidden_embed_size,
         weights,
         layer_norm_eps: float = 1e-12,
+        a_fn: str = "gelu",
     ):
         super().__init__()
         
+        activation_fn, scale = get_activation_fn(a_fn)
+        
         self.ff = torch.nn.Sequential(
-            nn.Linear(hidden_embed_size, hidden_embed_size),
-            nn.GELU(),
+            nn.Linear(hidden_embed_size, hidden_embed_size * scale),
+            activation_fn,
             nn.LayerNorm(hidden_embed_size, eps=layer_norm_eps),
         )
 

@@ -6,10 +6,6 @@ import einops
 from rotary_embedding_torch import RotaryEmbedding
 
 
-## TODO
-# Fix layernorm
-
-
 class TransformerEncoder(torch.nn.Module):
     """
     Single Transformer Encoder.
@@ -21,6 +17,7 @@ class TransformerEncoder(torch.nn.Module):
         n_attn_heads,
         attn_dropout: float = 0.0,
         layer_norm_eps: float = 1e-05,
+        a_fn: str = "gelu",
     ):
         super().__init__()
         
@@ -33,9 +30,11 @@ class TransformerEncoder(torch.nn.Module):
             attention_dropout_prob = attn_dropout
         )
         
+        activation_fn, scale = get_activation_fn(a_fn)
+        
         self.intermediate_layer = torch.nn.Sequential(
-            torch.nn.Linear(hidden_embed_size, hidden_embed_size * 4),
-            torch.nn.GELU(),
+            torch.nn.Linear(hidden_embed_size, hidden_embed_size * 4 * scale),
+            activation_fn,
             torch.nn.Linear(hidden_embed_size * 4, hidden_embed_size),
         )
         
@@ -141,3 +140,19 @@ class MultiHeadAttention(torch.nn.Module):
             return attn, attn_weights
         else:
             return attn, None
+        
+        
+        
+class SwiGLU(torch.nn.Module):
+    def forward(self, x):
+        x, gate = x.chunk(2, dim=-1) 
+        return F.silu(gate) * x
+        
+def get_activation_fn(a_fn):
+    
+    if a_fn == "gelu":
+        return torch.nn.GELU(), 1
+    
+    elif a_fn == "swiglu":
+        return SwiGLU(), 2
+    

@@ -18,11 +18,15 @@ def ablang_parse_args(args=None, is_test=False):
     parser = argparse.ArgumentParser()
     
     parser.add_argument('--name', '-n', type=str, default="Model", help='Model name.')
+    parser.add_argument('--json_args', type=str, default="", help='Model arguments in a json file.')
     parser = AbLangPaired_v1.add_model_specific_args(parser)
     parser = AbLangPaired_v1.add_training_specific_args(parser)
     
     parser = pl.Trainer.add_argparse_args(parser)
     args = parser.parse_args(args)
+    
+    args = set_json_arguments(args, args.json_args)
+    
     args.devices = int(args.devices) if args.devices else args.devices
     
     arguments = PrepareArguments(args, is_test)()
@@ -35,6 +39,20 @@ class ModelArguments:
     trainer_args:None
     model_specific_args:None
     
+    
+def set_json_arguments(args, json_file):
+    
+    if json_file == "":
+        return args
+    
+    with open(json_file, 'r') as f:
+        new_arguments = json.load(f)
+        
+    for key, val in new_arguments.items():
+        setattr(args, key, val)
+    
+    return args
+
 
 class PrepareArguments:
     

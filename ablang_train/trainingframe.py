@@ -31,6 +31,7 @@ class TrainingFrame(pl.LightningModule):
             padding_tkn = self.hparams.pad_tkn,
             mask_tkn = self.hparams.mask_tkn,
             layer_norm_eps = self.hparams.layer_norm_eps,
+            a_fn = self.hparams.a_fn,
             dropout = self.hparams.dropout, 
             use_tkn_dropout = self.hparams.use_tkn_dropout,
         )
