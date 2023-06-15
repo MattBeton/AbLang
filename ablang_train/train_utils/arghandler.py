@@ -22,7 +22,7 @@ def ablang_parse_args(args=None, is_test=False):
     parser = AbLangPaired_v1.add_model_specific_args(parser)
     parser = AbLangPaired_v1.add_training_specific_args(parser)
     
-    parser = pl.Trainer.add_argparse_args(parser)
+    #parser = pl.Trainer.add_argparse_args(parser)
     args = parser.parse_args(args)
     
     args = set_json_arguments(args, args.json_args)

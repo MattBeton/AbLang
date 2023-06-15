@@ -17,13 +17,13 @@ setup(
     },
     install_requires=[
         'torch>1.9',
-        'pandas',
         'pytorch-lightning',
         'scikit-learn',
         'seaborn',
         'requests',
         'einops',
         'rotary-embedding-torch',
-        'neptune-client',
+        'neptune',
+        'pandas',
     ],
 )
