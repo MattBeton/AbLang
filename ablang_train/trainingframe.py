@@ -36,7 +36,9 @@ class TrainingFrame(pl.LightningModule):
             use_tkn_dropout = self.hparams.use_tkn_dropout,
         )
         self.ablang.apply(self._init_weights) # Initialize weights
-        self.run_evaluations = Evaluations(self.tokenizer, self.hparams) # Initialize evaluations      
+        self.run_evaluations = Evaluations(self.tokenizer, self.hparams) # Initialize evaluations  
+        
+        self.validation_step_outputs = []
         
     def _init_weights(self, module):
         
@@ -65,14 +67,9 @@ class TrainingFrame(pl.LightningModule):
         if (batch_idx % self.hparams.accumulate_grad_batches) % 10 == 0: #self.global_step 
             torch.cuda.empty_cache()
         
+        self.logger.experiment['evaluation/train_loss'].log(loss)
+        
         return {"loss": loss}
-    
-    def training_step_end(self, batch_parts):
-        
-        train_loss = batch_parts['loss'].mean()
-        self.logger.experiment['evaluation/train_loss'].log(train_loss)
-        
-        return {'loss': train_loss}
     
     def validation_step(self, dataset, batch_idx): # Updated every step when validation is called
         
@@ -88,7 +85,13 @@ class TrainingFrame(pl.LightningModule):
         
         loss_heavy, perplexity_heavy = self.run_evaluations.loss_n_perplexity.calculate_perplexity_fast(self, heavy)
         loss_light, perplexity_light = self.run_evaluations.loss_n_perplexity.calculate_perplexity_fast(self, light)
-
+        
+        self.validation_step_outputs.append({
+            'val_loss': loss, 'perplexity':perplexity, 
+            'val_loss_h': loss_heavy, 'perplexity_h':perplexity_heavy,
+            'val_loss_l': loss_light, 'perplexity_l':perplexity_light,
+        })
+        
         return {
             'val_loss': loss, 'perplexity':perplexity, 
             'val_loss_h': loss_heavy, 'perplexity_h':perplexity_heavy,
@@ -96,27 +99,29 @@ class TrainingFrame(pl.LightningModule):
         }
     
     
-    def validation_epoch_end(self, val_step_outputs): # Updated once when validation is called
-        
-        perplexity = torch.stack([x['perplexity'] for x in val_step_outputs]).mean() # mean across each batch
+    def on_validation_epoch_end(self): # Updated once when validation is called
+                
+        perplexity = torch.stack([x['perplexity'] for x in self.validation_step_outputs]).mean() # mean across each batch
         self.logger.experiment["evaluation/perplexity"].log(perplexity)
         
-        val_loss = torch.stack([x['val_loss'] for x in val_step_outputs]).mean()
+        val_loss = torch.stack([x['val_loss'] for x in self.validation_step_outputs]).mean()
         self.logger.experiment["evaluation/val_loss"].log(val_loss)
         
-        perplexity = torch.stack([x['perplexity_h'] for x in val_step_outputs]).mean() # mean across each batch
+        perplexity = torch.stack([x['perplexity_h'] for x in self.validation_step_outputs]).mean() # mean across each batch
         self.logger.experiment["evaluation/perplexity_h"].log(perplexity)
         
-        val_loss = torch.stack([x['val_loss_h'] for x in val_step_outputs]).mean()
+        val_loss = torch.stack([x['val_loss_h'] for x in self.validation_step_outputs]).mean()
         self.logger.experiment["evaluation/val_loss_h"].log(val_loss)
         
-        perplexity = torch.stack([x['perplexity_l'] for x in val_step_outputs]).mean() # mean across each batch
+        perplexity = torch.stack([x['perplexity_l'] for x in self.validation_step_outputs]).mean() # mean across each batch
         self.logger.experiment["evaluation/perplexity_l"].log(perplexity)
         
-        val_loss = torch.stack([x['val_loss_l'] for x in val_step_outputs]).mean()
+        val_loss = torch.stack([x['val_loss_l'] for x in self.validation_step_outputs]).mean()
         self.logger.experiment["evaluation/val_loss_l"].log(val_loss)
         
         self.run_evaluations(self)
+        self.validation_step_outputs.clear()  # free memory
+        
 
     
     def configure_optimizers(self):

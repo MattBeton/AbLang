@@ -23,7 +23,7 @@ setup(
         'requests',
         'einops',
         'rotary-embedding-torch',
-        'neptune',
+        'neptune-client',
         'pandas',
     ],
 )
