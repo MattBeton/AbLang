@@ -58,7 +58,7 @@ class AbLangPaired_v1(pl.LightningModule):
         parser.add_argument('--eval_batch_size', type=int, default=100)
         parser.add_argument('--over_sample_data', type=int, default=0)
         
-        parser.add_argument('--accelerator', type=int, default="cpu")
+        parser.add_argument('--accelerator', type=str, default="cpu")
         parser.add_argument('--devices', type=int, default=1)
         
         return parent_parser
