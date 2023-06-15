@@ -133,8 +133,7 @@ class AbRep(torch.nn.Module):
         
         return_rep_layers = set(return_rep_layers)
         rep_layers = {}
-        if 0 in return_rep_layers:
-            rep_layers[0] = hidden_embed
+        if 0 in return_rep_layers: rep_layers[0] = hidden_embed
             
         all_attn_weights = []
         
