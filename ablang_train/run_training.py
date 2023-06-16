@@ -22,31 +22,16 @@ def enforce_reproducibility(seed=42):
     np.random.seed(seed)
     
     pl.seed_everything(seed)
-    
-def set_neptune_logger(args):
-    """
-    Initialize Neptune logger
-    """
-
-    neptune_args = { 'api_key':"eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI0N2Y2YmIxMS02OWM3LTRhY2MtYTQxOC0xODU5N2E0ODFmMzEifQ==",
-    'project':"tobiasheol/AbLangTraining",
-    'name':args.name,
-    'log_model_checkpoints':False,
-    }
-
-    return pl.loggers.neptune.NeptuneLogger(**neptune_args)
-
 
 if __name__ == '__main__':
     
     
     # SET ARGUMENTS AND HPARAMS
     arguments = ablang_parse_args()
-    arguments.trainer_args['logger'] = set_neptune_logger(arguments.model_specific_args)
 
     # SET CALLBACKS
     callbacks = CallbackHandler(
-        save_step_frequency=arguments.model_specific_args.val_check_interval, 
+        save_step_frequency=arguments.model_specific_args.log_every_n_steps, 
         progress_refresh_rate=0, 
         outpath=arguments.model_specific_args.out_path
     )

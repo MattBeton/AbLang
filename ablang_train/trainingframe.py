@@ -63,11 +63,11 @@ class TrainingFrame(pl.LightningModule):
         logits = self(tokens)
         loss = self.loss_fn(logits.view(-1, self.hparams.vocab_size), labels)
         
-        # Must clear cache at regular interval
-        if (batch_idx % self.hparams.accumulate_grad_batches) % 10 == 0: #self.global_step 
-            torch.cuda.empty_cache()
-        
-        self.logger.experiment['evaluation/train_loss'].log(loss)
+        if (batch_idx % self.hparams.accumulate_grad_batches) == 0: # once per accumulation 
+            self.logger.experiment['evaluation/train_loss'].log(loss)
+            
+            if (batch_idx % 20) == 0:
+                torch.cuda.empty_cache() # Must clear cache at regular interval
         
         return {"loss": loss}
     

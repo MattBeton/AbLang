@@ -37,6 +37,8 @@ class AbLangPaired_v1(pl.LightningModule):
         parser = parent_parser.add_argument_group("AbLangPaired")
         parser.add_argument("--data_path", type=str, default='../data/feb2022_5_data')
         parser.add_argument('--out_path', type=str, default="/data/iraqbabbler/olsen/Documents/projects/AbLang/model-catalogue/paired-ablang/train_ablang_pair/reports/models")
+        parser.add_argument('--eval_path', type=str, default="/vols/bitbucket/olsen/processed_oas_data/nov2022/nov2022-paired-all/")
+        
         parser.add_argument('--cpus', type=int, default=1, help='Number of cpus to use on data handling (4xGPUs is the recommended). \
                                                                     0 uses the main process to load the data.')
 
@@ -53,12 +55,22 @@ class AbLangPaired_v1(pl.LightningModule):
         parser.add_argument('--weight_decay', type=float, default=0.01)
         parser.add_argument('--adam_epsilon', type=float, default=1e-8, help='Adam Epsilon.')
         parser.add_argument('--adam_betas', default=[0.9,0.98])
-        
         parser.add_argument('--seed', type=int, default=42, help='Random seed.')
         parser.add_argument('--eval_batch_size', type=int, default=100)
         parser.add_argument('--over_sample_data', type=int, default=0)
         
+        return parent_parser
+    
+    @staticmethod
+    def add_pl_train_args(parent_parser):
+        parser = parent_parser.add_argument_group("AbLangPaired")
+        
         parser.add_argument('--accelerator', type=str, default="cpu")
         parser.add_argument('--devices', type=int, default=1)
+        parser.add_argument('--precision', type=str, default='32-true')       
+        parser.add_argument('--val_check_interval', type=int, default=100)
+        parser.add_argument('--log_every_n_steps', type=int, default=100)
+        parser.add_argument('--enable_checkpointing', type=strtobool, default=None)
+        parser.add_argument('--default_root_dir', type=strtobool, default=None)      
         
         return parent_parser

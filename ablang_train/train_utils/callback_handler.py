@@ -86,8 +86,7 @@ class CheckpointEveryNSteps(pl.Callback):
             
             #### SAVE THE MODEL CHECKPOINT ##### (saving both the checkpoint and the model state dict might be a little redundant)
             ckpt_path = os.path.join(correct_dirpath, filename)
-
-            #trainer.save_checkpoint(ckpt_path)
+            trainer.save_checkpoint(ckpt_path)
             
             #### SAVE THE STATE DICT OF THE MODEL #####
             torch.save(model.state_dict(), os.path.join(correct_dirpath, 'model.pt'))

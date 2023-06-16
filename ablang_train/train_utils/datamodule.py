@@ -38,19 +38,19 @@ class AbDataModule(pl.LightningDataModule):
             end_tkn = self.data_hparams.end_tkn,
             sep_tkn = self.data_hparams.sep_tkn,
             mask_tkn = self.data_hparams.mask_tkn,
-            mask_percent=self.data_hparams.mask_percent,
-            mask_variable=self.data_hparams.variable_masking,
-            cdr3_focus=1.,
-            mask_technique=self.data_hparams.mask_technique,
-            change_percent = self.data_hparams.change_percent,
-            leave_percent = self.data_hparams.leave_percent,
+            mask_percent = .15,
+            mask_variable = self.data_hparams.variable_masking,
+            cdr3_focus = 1.,
+            mask_technique = "random",
+            change_percent = .1,
+            leave_percent = .1,
         )
         
         self.train = self.get_data(
             file_path=os.path.join(self.data_hparams.data_path,'train_data'),
             over_sample_data=self.data_hparams.over_sample_data
         )
-        self.val = self.get_data(file_path=os.path.join('/vols/bitbucket/olsen/processed_oas_data/nov2022/nov2022-paired-all/','eval_data'))
+        self.val = self.get_data(file_path=os.path.join(self.data_hparams.data_path,'eval_data'))[:1000]
         
     def train_dataloader(self):
         return DataLoader(self.train, 
@@ -68,7 +68,6 @@ class AbDataModule(pl.LightningDataModule):
                           num_workers=self.data_hparams.cpus,
                           pin_memory=True,
                          )
-
 
     def get_data(self, file_path, over_sample_data=False):
         "Reads txt file of sequences."
