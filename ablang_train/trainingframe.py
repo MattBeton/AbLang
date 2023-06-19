@@ -92,32 +92,31 @@ class TrainingFrame(pl.LightningModule):
             'val_loss_l': loss_light, 'perplexity_l':perplexity_light,
         })
         
-        return {
-            'val_loss': loss, 'perplexity':perplexity, 
-            'val_loss_h': loss_heavy, 'perplexity_h':perplexity_heavy,
-            'val_loss_l': loss_light, 'perplexity_l':perplexity_light,
-        }
+        del heavy
+        del light
+        
+        return {'val_loss': loss}
     
     
     def on_validation_epoch_end(self): # Updated once when validation is called
                 
-        perplexity = torch.stack([x['perplexity'] for x in self.validation_step_outputs]).mean().item() # mean across each batch
-        self.logger.experiment["evaluation/perplexity"].log(float(perplexity))
+        perplexity = torch.stack([x['perplexity'] for x in self.validation_step_outputs]).mean() # mean across each batch
+        self.logger.experiment["evaluation/perplexity"].log(float(perplexity.item()))
         
-        val_loss = torch.stack([x['val_loss'] for x in self.validation_step_outputs]).mean().item()
-        self.logger.experiment["evaluation/val_loss"].log(float(val_loss))
+        val_loss = torch.stack([x['val_loss'] for x in self.validation_step_outputs]).mean()
+        self.logger.experiment["evaluation/val_loss"].log(float(val_loss.item()))
         
-        perplexity = torch.stack([x['perplexity_h'] for x in self.validation_step_outputs]).mean().item() # mean across each batch
-        self.logger.experiment["evaluation/perplexity_h"].log(float(perplexity))
+        perplexity = torch.stack([x['perplexity_h'] for x in self.validation_step_outputs]).mean() # mean across each batch
+        self.logger.experiment["evaluation/perplexity_h"].log(float(perplexity.item()))
         
-        val_loss = torch.stack([x['val_loss_h'] for x in self.validation_step_outputs]).mean().item()
-        self.logger.experiment["evaluation/val_loss_h"].log(float(val_loss))
+        val_loss = torch.stack([x['val_loss_h'] for x in self.validation_step_outputs]).mean()
+        self.logger.experiment["evaluation/val_loss_h"].log(float(val_loss.item()))
         
-        perplexity = torch.stack([x['perplexity_l'] for x in self.validation_step_outputs]).mean().item() # mean across each batch
-        self.logger.experiment["evaluation/perplexity_l"].log(float(perplexity))
+        perplexity = torch.stack([x['perplexity_l'] for x in self.validation_step_outputs]).mean() # mean across each batch
+        self.logger.experiment["evaluation/perplexity_l"].log(float(perplexity.item()))
         
-        val_loss = torch.stack([x['val_loss_l'] for x in self.validation_step_outputs]).mean().item()
-        self.logger.experiment["evaluation/val_loss_l"].log(float(val_loss))
+        val_loss = torch.stack([x['val_loss_l'] for x in self.validation_step_outputs]).mean()
+        self.logger.experiment["evaluation/val_loss_l"].log(float(val_loss.item()))
         
         self.run_evaluations(self)
         self.validation_step_outputs.clear()  # free memory
@@ -153,5 +152,5 @@ class TrainingFrame(pl.LightningModule):
                                                     num_training_steps=self.hparams.num_training_steps
                                                    )
         scheduler = {"scheduler": scheduler, "interval": "step", "frequency": 1}
-        return [optimizer], [scheduler]
+        return ([optimizer], [scheduler])
 
