@@ -19,6 +19,8 @@ def log_restoring_sequence(trainer):
         aaPreds, aaPreds50 = restore_seq(trainer, seq_to_restore = heavy_seq+'|'+light_seq)       
         trainer.logger.experiment['evaluation/paired_reconstruct'].log(str(aaPreds[0]))
         trainer.logger.experiment['evaluation/paired_reconstruct_50'].log(str(aaPreds50[0]))
+        del aaPreds
+        del aaPreds50
         
         
 def restore_seq(trainer, seq_to_restore):

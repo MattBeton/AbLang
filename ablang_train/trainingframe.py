@@ -64,7 +64,7 @@ class TrainingFrame(pl.LightningModule):
         loss = self.loss_fn(logits.view(-1, self.hparams.vocab_size), labels)
         
         if (batch_idx % self.hparams.accumulate_grad_batches) == 0: # once per accumulation 
-            self.logger.experiment['evaluation/train_loss'].log(float(loss))
+            self.logger.experiment['evaluation/train_loss'].log(float(loss.item()))
             
             if (batch_idx % 20) == 0:
                 torch.cuda.empty_cache() # Must clear cache at regular interval
@@ -101,22 +101,22 @@ class TrainingFrame(pl.LightningModule):
     
     def on_validation_epoch_end(self): # Updated once when validation is called
                 
-        perplexity = torch.stack([x['perplexity'] for x in self.validation_step_outputs]).mean() # mean across each batch
+        perplexity = torch.stack([x['perplexity'] for x in self.validation_step_outputs]).mean().item() # mean across each batch
         self.logger.experiment["evaluation/perplexity"].log(float(perplexity))
         
-        val_loss = torch.stack([x['val_loss'] for x in self.validation_step_outputs]).mean()
+        val_loss = torch.stack([x['val_loss'] for x in self.validation_step_outputs]).mean().item()
         self.logger.experiment["evaluation/val_loss"].log(float(val_loss))
         
-        perplexity = torch.stack([x['perplexity_h'] for x in self.validation_step_outputs]).mean() # mean across each batch
+        perplexity = torch.stack([x['perplexity_h'] for x in self.validation_step_outputs]).mean().item() # mean across each batch
         self.logger.experiment["evaluation/perplexity_h"].log(float(perplexity))
         
-        val_loss = torch.stack([x['val_loss_h'] for x in self.validation_step_outputs]).mean()
+        val_loss = torch.stack([x['val_loss_h'] for x in self.validation_step_outputs]).mean().item()
         self.logger.experiment["evaluation/val_loss_h"].log(float(val_loss))
         
-        perplexity = torch.stack([x['perplexity_l'] for x in self.validation_step_outputs]).mean() # mean across each batch
+        perplexity = torch.stack([x['perplexity_l'] for x in self.validation_step_outputs]).mean().item() # mean across each batch
         self.logger.experiment["evaluation/perplexity_l"].log(float(perplexity))
         
-        val_loss = torch.stack([x['val_loss_l'] for x in self.validation_step_outputs]).mean()
+        val_loss = torch.stack([x['val_loss_l'] for x in self.validation_step_outputs]).mean().item()
         self.logger.experiment["evaluation/val_loss_l"].log(float(val_loss))
         
         self.run_evaluations(self)

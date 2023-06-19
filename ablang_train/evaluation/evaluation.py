@@ -14,6 +14,6 @@ class Evaluations:
     
     def __call__(self, trainer, val_step_outputs=''):
                 
-        plot_aa_embeddings(trainer)
+        #plot_aa_embeddings(trainer)
         log_restoring_sequence(trainer)
         
