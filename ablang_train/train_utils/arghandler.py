@@ -76,10 +76,10 @@ class PrepareArguments:
         gpu_batch_size = self.args.effective_batch_size // self.args.devices 
         accumulate_size = int(gpu_batch_size // self.args.max_fit_batch_size)
         
+        # Calculates how many times the gradients needs to be accumulated
+        self.args.accumulate_grad_batches = max(accumulate_size, 1)
+        
         if accumulate_size > 1: 
-            # Calculates how many times the gradients needs to be accumulated
-            self.args.accumulate_grad_batches = accumulate_size
-            
             # Adjust val_check, n_log and training_steps
             self.args.val_check_interval = int(self.args.val_check_interval * accumulate_size) 
             self.args.log_every_n_steps = int(self.args.log_every_n_steps * accumulate_size) 
@@ -99,8 +99,8 @@ class PrepareArguments:
             # You LR*(gradient/gpus), 
             # and therefore need to multiply your given LR with the number of gpus to get the effective LR
             self.args.learning_rate = self.args.learning_rate / self.args.devices
-            if self.args.devices > 1:
-                self.args.strategy = "ddp" #DDPPlugin() # find_unused_parameters=False 
+            
+            if self.args.devices > 1: self.args.strategy = "ddp" #DDPPlugin() # find_unused_parameters=False 
         
         # We set the training batch size to be the max possible batch size
         self.args.train_batch_size = self.args.max_fit_batch_size  
@@ -114,11 +114,11 @@ class PrepareArguments:
         hparamstmp = {**vars(self.args)}
         
         trainer_args = {}
-        trainer_keys = ['accelerator', 'devices', 'precision', 'strategy',
-                        #'logger',
-                        'val_check_interval', '', 'enable_checkpointing', 
-                        'default_root_dir', 'max_steps', 'accumulate_grad_batches', 
-                       ]
+        trainer_keys = [
+            'accelerator', 'devices', 'precision', 'strategy',
+            'val_check_interval', 'enable_checkpointing', 
+            'default_root_dir', 'max_steps', 'accumulate_grad_batches', 
+        ]
 
         for key in trainer_keys:
             if key in hparamstmp: trainer_args[key] = hparamstmp[key]
@@ -131,10 +131,11 @@ class PrepareArguments:
         Initialize Neptune logger
         """
 
-        neptune_args = { 'api_key':"eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI0N2Y2YmIxMS02OWM3LTRhY2MtYTQxOC0xODU5N2E0ODFmMzEifQ==",
-        'project':"tobiasheol/AbLangTraining",
-        'name':name,
-        'log_model_checkpoints':False,
+        neptune_args = { 
+            'api_key':"eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI0N2Y2YmIxMS02OWM3LTRhY2MtYTQxOC0xODU5N2E0ODFmMzEifQ==",
+            'project':"tobiasheol/AbLangTraining",
+            'name':name,
+            'log_model_checkpoints':False,
         }
 
         return pl.loggers.neptune.NeptuneLogger(**neptune_args)
