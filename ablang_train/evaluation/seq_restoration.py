@@ -34,7 +34,7 @@ def restore_seq(trainer, seq_to_restore):
     
     tokenMAX = torch.max(torch.nn.Softmax(dim=-1)(tokenPreds), -1)
 
-    aaPreds = tokenizer(tokenMAX[1], mode="decode")
+    aaPreds = tokenizer(tokenMAX[1], w_extra_tkns=False, mode="decode")
 
     unkMatrix = torch.zeros(tokenMAX[0].shape, dtype=torch.long, device=trainer.device) + 21
     
