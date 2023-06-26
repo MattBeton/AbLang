@@ -161,16 +161,15 @@ def get_indexes(allowed_mask,
                 mask_technique = 'random'
                ): 
     
-    allowed_mask[:, 106:118] *= cdr3_focus # Changes the chance of residues in the CDR3 getting masked. It's 106 and 118 because the start token is present.
-    
+    #allowed_mask[:, 106:118] *= cdr3_focus # Changes the chance of residues in the CDR3 getting masked. It's 106 and 118 because the start token is present.
     
     if mask_technique == 'random':
         
-        idx = torch.multinomial(allowed_mask.float(), num_samples=mask_num, replacement=False)
+        idx = torch.multinomial(allowed_mask.float(), num_samples=mask_num, replacement=False) #.double()
     
     elif mask_technique == 'connected':
 
-        start_idx = torch.multinomial(allowed_mask.float(), num_samples=1, replacement=False).repeat(1, mask_num)
+        start_idx = torch.multinomial(allowed_mask.float(), num_samples=1, replacement=False).repeat(1, mask_num) #.double()
         step_idx = torch.linspace(0, mask_num-1, steps=mask_num, dtype=int).repeat(allowed_mask.shape[0], 1)
         
         idx = start_idx+step_idx
