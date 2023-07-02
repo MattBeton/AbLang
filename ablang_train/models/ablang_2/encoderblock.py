@@ -4,7 +4,7 @@ from torch import nn
 import torch.nn.functional as F
 import einops
 from rotary_embedding_torch import RotaryEmbedding
-
+from mixture_of_experts import MoE
 
 class TransformerEncoder(torch.nn.Module):
     """
@@ -18,6 +18,7 @@ class TransformerEncoder(torch.nn.Module):
         attn_dropout: float = 0.0,
         layer_norm_eps: float = 1e-05,
         a_fn: str = "gelu",
+        use_moe: bool = False,
     ):
         super().__init__()
         
@@ -32,11 +33,27 @@ class TransformerEncoder(torch.nn.Module):
         
         activation_fn, scale = get_activation_fn(a_fn)
         
-        self.intermediate_layer = torch.nn.Sequential(
-            torch.nn.Linear(hidden_embed_size, hidden_embed_size * 4 * scale),
-            activation_fn,
-            torch.nn.Linear(hidden_embed_size * 4, hidden_embed_size),
-        )
+        self.use_moe = use_moe
+        if use_moe:        
+            self.intermediate_layer = MoE(
+                dim = hidden_embed_size,
+                num_experts = 16,                             # increase the experts (# parameters) of your model without increasing computation
+                hidden_dim = hidden_embed_size * 4 * scale,           # size of hidden dimension in each expert, defaults to 4 * dimension
+                activation = activation_fn,                    # use your preferred activation, will default to GELU
+                second_policy_train = 'random',               # in top_2 gating, policy for whether to use a second-place expert
+                second_policy_eval = 'random',                # all (always) | none (never) | threshold (if gate value > the given threshold) | random (if gate value > threshold * random_uniform(0, 1))
+                second_threshold_train = 0.2,
+                second_threshold_eval = 0.2,
+                capacity_factor_train = 1.25,   # experts have fixed capacity per batch. we need some extra capacity in case gating is not perfectly balanced.
+                capacity_factor_eval = 2.,      # capacity_factor_* should be set to a value >=1
+                loss_coef = 1e-2                # multiplier on the auxiliary expert balancing auxiliary loss
+            )
+        else:
+            self.intermediate_layer = torch.nn.Sequential(
+                torch.nn.Linear(hidden_embed_size, hidden_embed_size * 4 * scale),
+                activation_fn(),
+                torch.nn.Linear(hidden_embed_size * 4, hidden_embed_size),
+            )
         
         self.pre_attn_layer_norm = torch.nn.LayerNorm(hidden_embed_size, eps=layer_norm_eps)
         self.final_layer_norm = torch.nn.LayerNorm(hidden_embed_size, eps=layer_norm_eps)
@@ -53,11 +70,14 @@ class TransformerEncoder(torch.nn.Module):
         
         residual = hidden_embed
         hidden_embed = self.final_layer_norm(hidden_embed)
-        hidden_embed = self.intermediate_layer(hidden_embed) 
-        hidden_embed = residual + hidden_embed
-        
-        return hidden_embed, attn_weights
-
+        if self.use_moe:
+            hidden_embed, aux_loss = self.intermediate_layer(hidden_embed)
+            hidden_embed = residual + hidden_embed
+            return hidden_embed, attn_weights, aux_loss
+        else:
+            hidden_embed = self.intermediate_layer(hidden_embed)
+            hidden_embed = residual + hidden_embed
+            return hidden_embed, attn_weights, 0    
     
 class MultiHeadAttention(torch.nn.Module):
 
@@ -151,8 +171,8 @@ class SwiGLU(torch.nn.Module):
 def get_activation_fn(a_fn):
     
     if a_fn == "gelu":
-        return torch.nn.GELU(), 1
+        return torch.nn.GELU, 1
     
     elif a_fn == "swiglu":
-        return SwiGLU(), 2
+        return SwiGLU, 2
     

@@ -34,6 +34,7 @@ class TrainingFrame(pl.LightningModule):
             a_fn = self.hparams.a_fn,
             dropout = self.hparams.dropout, 
             use_tkn_dropout = self.hparams.use_tkn_dropout,
+            use_moe = self.hparams.use_moe,
         )
         self.ablang.apply(self._init_weights) # Initialize weights
         self.run_evaluations = Evaluations(self.tokenizer, self.hparams) # Initialize evaluations  
@@ -54,22 +55,26 @@ class TrainingFrame(pl.LightningModule):
 
     def forward(self, tokens):
         
-        return self.ablang(tokens)
+        return self.ablang(tokens, return_aux_loss=True)
 
     def training_step(self, dataset, batch_idx): 
         
         tokens, labels = dataset['input'], dataset['labels']
         
-        logits = self(tokens)
+        logits, aux_loss = self(tokens)
         loss = self.loss_fn(logits.view(-1, self.hparams.vocab_size), labels)
         
         if (batch_idx % self.hparams.accumulate_grad_batches) == 0: # once per accumulation 
             self.logger.experiment['evaluation/train_loss'].log(float(loss.item()))
             
-            if (batch_idx % 20) == 0:
+            if (batch_idx % 10) == 0:
                 torch.cuda.empty_cache() # Must clear cache at regular interval
         
-        return {"loss": loss}
+        del tokens
+        del labels
+        del dataset
+        
+        return {"loss": loss + aux_loss}
     
     def validation_step(self, dataset, batch_idx): # Updated every step when validation is called
         

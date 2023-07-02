@@ -25,9 +25,10 @@ class AbLang(torch.nn.Module):
         a_fn: str = "gelu",
         dropout: float = 0.0, 
         use_tkn_dropout: bool = False,
+        use_moe: bool = False,
     ):
         super().__init__()
-        
+                
         self.AbRep = AbRep(
             vocab_size,
             hidden_embed_size,
@@ -39,6 +40,7 @@ class AbLang(torch.nn.Module):
             a_fn,
             dropout, 
             use_tkn_dropout,
+            use_moe,
         )       
         self.AbHead = AbHead(
             vocab_size,
@@ -48,7 +50,7 @@ class AbLang(torch.nn.Module):
             a_fn,
         )
         
-    def forward(self, tokens, return_attn_weights=False, return_rep_layers=[]):
+    def forward(self, tokens, return_attn_weights=False, return_rep_layers=[], return_aux_loss=False):
         
         representations = self.AbRep(tokens, return_attn_weights, return_rep_layers)
         
@@ -57,7 +59,9 @@ class AbLang(torch.nn.Module):
         
         elif return_rep_layers != []:
             return representations.many_hidden_states
-        
+        elif return_aux_loss:
+            likelihoods = self.AbHead(representations.last_hidden_states)
+            return likelihoods, representations.all_aux_loss
         else:
             likelihoods = self.AbHead(representations.last_hidden_states)
             return likelihoods
@@ -84,6 +88,7 @@ class AbRep(torch.nn.Module):
         a_fn: str = "gelu",
         dropout: float = 0.0, 
         use_tkn_dropout: bool = False,
+        use_moe: bool = False,
     ):
         super().__init__()
         self.padding_tkn = padding_tkn
@@ -102,6 +107,7 @@ class AbRep(torch.nn.Module):
                 attn_dropout = dropout,
                 layer_norm_eps = layer_norm_eps,
                 a_fn = a_fn,
+                use_moe = use_moe,
             ) for _ in range(n_encoder_blocks)]
         )
         self.layer_norm_after_encoder_blocks = nn.LayerNorm(hidden_embed_size, eps=layer_norm_eps)
@@ -136,9 +142,11 @@ class AbRep(torch.nn.Module):
         if 0 in return_rep_layers: rep_layers[0] = hidden_embed
             
         all_attn_weights = []
+        all_aux_loss = 0
         
         for n_layer, encoder_block in enumerate(self.encoder_blocks):
-            hidden_embed, attn_weights = encoder_block(hidden_embed, padding_mask, return_attn_weights)
+            hidden_embed, attn_weights, aux_loss = encoder_block(hidden_embed, padding_mask, return_attn_weights)
+            all_aux_loss += aux_loss
             
             if (n_layer + 1) in return_rep_layers: 
                 rep_layers[n_layer + 1] = hidden_embed
@@ -148,7 +156,7 @@ class AbRep(torch.nn.Module):
            
         hidden_embed = self.layer_norm_after_encoder_blocks(hidden_embed)
 
-        return DataAbRep(last_hidden_states=hidden_embed, many_hidden_states=rep_layers, attention_weights=all_attn_weights)
+        return DataAbRep(last_hidden_states=hidden_embed, many_hidden_states=rep_layers, attention_weights=all_attn_weights, all_aux_loss=all_aux_loss)
     
 
 class AbHead(torch.nn.Module):
@@ -170,7 +178,7 @@ class AbHead(torch.nn.Module):
         
         self.ff = torch.nn.Sequential(
             nn.Linear(hidden_embed_size, hidden_embed_size * scale),
-            activation_fn,
+            activation_fn(),
             nn.LayerNorm(hidden_embed_size, eps=layer_norm_eps),
         )
 
@@ -194,3 +202,4 @@ class DataAbRep():
     last_hidden_states: torch.FloatTensor
     many_hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attention_weights: Optional[Tuple[torch.FloatTensor]] = None
+    all_aux_loss: torch.FloatTensor = 0
