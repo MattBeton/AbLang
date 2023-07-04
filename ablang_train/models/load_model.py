@@ -73,6 +73,7 @@ def fetch_ablang_2_model(model_to_use, random_init=False, device='cpu'):
         dropout = hparams.dropout, 
         use_tkn_dropout = hparams.use_tkn_dropout,
         a_fn = hparams.a_fn,
+        use_moe = hparams.use_moe,
     )
 
     if not random_init:

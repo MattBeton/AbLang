@@ -11,7 +11,7 @@ class AbLangPaired_v1(pl.LightningModule):
         parser.add_argument('--n_encoder_blocks', type=int, default=1, help='Number of encoder blocks.')
         parser.add_argument('--hidden_embed_size', type=int, default=768, help='Representation (hidden) size.')
         parser.add_argument('--n_attn_heads', type=int, default=12)
-        parser.add_argument('--dropout', type=float, default=0.1)
+        parser.add_argument('--dropout', type=float, default=0.0)
         parser.add_argument('--use_tkn_dropout', type=strtobool, default=False)
         parser.add_argument('--loss_fn', type=str, default="CrossEntropy_Loss")
         parser.add_argument('--a_fn', type=str, default="gelu")

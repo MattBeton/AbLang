@@ -86,7 +86,7 @@ class AbRep(torch.nn.Module):
         mask_tkn,
         layer_norm_eps: float = 1e-12,
         a_fn: str = "gelu",
-        dropout: float = 0.0, 
+        dropout: float = 0.1, 
         use_tkn_dropout: bool = False,
         use_moe: bool = False,
     ):
