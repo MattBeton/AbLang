@@ -12,7 +12,8 @@ class AbDataModule(pl.LightningDataModule):
     def __init__(self, data_hparams, tokenizer):
         super().__init__()
         self.data_hparams = data_hparams
-        self.tokenizer = tokenizer()        
+        self.tokenizer = tokenizer()
+        self.over_sample_data = data_hparams.over_sample_data
         
     def setup(self, stage=None): # called on every GPU
         
@@ -46,10 +47,7 @@ class AbDataModule(pl.LightningDataModule):
             leave_percent = .1,
         )
         
-        self.train = self.get_data(
-            file_path=os.path.join(self.data_hparams.data_path,'train_data'),
-            over_sample_data=self.data_hparams.over_sample_data
-        )
+        self.train = self.get_data(file_path=os.path.join(self.data_hparams.data_path,'train_data'), is_train_data = True)
         self.val = self.get_data(file_path=os.path.join(self.data_hparams.eval_path,'eval_data'))[:1000]
         
     def train_dataloader(self):
@@ -69,18 +67,18 @@ class AbDataModule(pl.LightningDataModule):
                           pin_memory=True,
                          )
 
-    def get_data(self, file_path, over_sample_data=False):
-        "Reads txt file of sequences."
+    def get_data(self, file_path, is_train_data = False):
+        "Reads txt file of sequences."        
         
         if os.path.isfile(os.path.join(file_path,'heavy_chains.txt')):
             with open(os.path.join(file_path,'heavy_chains.txt'), encoding="utf-8") as f:
-                heavychain = [line for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
+                heavychain = [f"{line}|" for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
         else:
             heavychain = []
             
         if os.path.isfile(os.path.join(file_path,'light_chains.txt')):
             with open(os.path.join(file_path,'light_chains.txt'), encoding="utf-8") as f:
-                lightchain = [line for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
+                lightchain = [f"|{line}" for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
         else:
             lightchain = []
             
@@ -90,10 +88,9 @@ class AbDataModule(pl.LightningDataModule):
         else:
             pairedchain = []
             
-        if over_sample_data:
+        if is_train_data and (self.over_sample_data == 1):
             sizes = [len(heavychain), len(lightchain), len(pairedchain)]
             scale = (np.max(sizes)/sizes).astype(np.int16)
-            
             return heavychain*scale[0] + lightchain*scale[1] + pairedchain*scale[2]
             
         else:

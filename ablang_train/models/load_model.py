@@ -62,6 +62,10 @@ def fetch_ablang_2_model(model_to_use, random_init=False, device='cpu'):
     with open(os.path.join(model_to_use, 'hparams.json'), 'r', encoding='utf-8') as f:
         hparams = argparse.Namespace(**json.load(f))    
 
+    if not 'use_moe' in hparams:
+        hparams.use_moe = False
+        
+        
     AbLang = ablang_2_model.AbLang(
         vocab_size = hparams.vocab_size,
         hidden_embed_size = hparams.hidden_embed_size,
