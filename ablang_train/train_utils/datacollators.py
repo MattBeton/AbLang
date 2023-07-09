@@ -181,7 +181,7 @@ def get_indexes(
             start_idx = torch.multinomial(torch.ones(allowed_mask[:,:5].shape), num_samples=1, replacement=True).repeat(1, mask_num)
             step_idx = torch.linspace(0, mask_num-1, steps = mask_num, dtype = int).repeat(allowed_mask.shape[0], 1)
             
-            if allowed_mask.shape[1] <= (start_idx + step_idx + span_start).max():
+            if allowed_mask.shape[1] <= (start_idx + step_idx + span_start).max() - 1:
                 break
             
             idx.append(start_idx + step_idx + span_start)
