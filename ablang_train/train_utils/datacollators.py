@@ -53,8 +53,12 @@ class ABcollator():
         
         if self.mask_technique == 'mix':
             mask_technique = np.random.choice(['random', 'span_long', 'span_short'], p = (1/3, 1/3, 1/3), size=None)
+            if mask_technique == 'span_short':
+                mask_num = 50
             return mask_num, mask_technique, change_percent
         else:
+            if self.mask_technique == 'span_short':
+                mask_num = 50
             return mask_num, self.mask_technique, change_percent
         
         
@@ -173,21 +177,22 @@ def get_indexes(
         step_idx = torch.linspace(0, mask_num-1, steps = mask_num, dtype = int).repeat(allowed_mask.shape[0], 1)
         idx = start_idx + step_idx
         
-    elif mask_technique == 'span_short':
-        mask_num = np.random.choice([2, 3, 4], size=None)
-        span_start = 0
-        idx = []
-        for num in range(10):
-            start_idx = torch.multinomial(torch.ones(allowed_mask[:,:5].shape), num_samples=1, replacement=True).repeat(1, mask_num)
-            step_idx = torch.linspace(0, mask_num-1, steps = mask_num, dtype = int).repeat(allowed_mask.shape[0], 1)
-            
-            if allowed_mask.shape[1] <= (start_idx + step_idx + span_start).max() - 1:
-                break
-            
-            idx.append(start_idx + step_idx + span_start)
-            span_start += torch.randint(low = mask_num+3, high = 46, size = (1,))
+    elif mask_technique == 'span_short':        
+        span_lengths = np.random.choice([2, 3, 4], size=(10))
+        span_separation_lengths = torch.normal(mean=15, std=6, size=(10,)).int()
+        span_separation_lengths = torch.where(torch.where(span_separation_lengths < 1, 1, span_separation_lengths) > 15, 15, span_separation_lengths)
 
-        idx = torch.concatenate(idx, axis=1)
+        start_idx = torch.multinomial(allowed_mask.float(), num_samples = 1, replacement = False).repeat(1, mask_num)
+        step_idx = torch.linspace(0, mask_num-1, steps = mask_num, dtype = int).repeat(allowed_mask.shape[0], 1)
+        idx = start_idx + step_idx
+
+        start_idx = 0
+        many_span_idx = []
+        for lengths, separation in zip(span_lengths, span_separation_lengths):
+            many_span_idx.append(idx[:,start_idx:start_idx+lengths])
+            start_idx += lengths + separation
+
+        idx = torch.concatenate(many_span_idx, axis=1)
         
     n_change = max(int(idx.shape[1]*change_percent), 1)
     n_leave  = max(int(idx.shape[1]*leave_percent ), 0)
