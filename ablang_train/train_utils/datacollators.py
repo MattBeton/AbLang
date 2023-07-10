@@ -52,7 +52,7 @@ class ABcollator():
         
         
         if self.mask_technique == 'mix':
-            mask_technique = np.random.choice(['random', 'span_long', 'span_short'], p = (1/3, 1/3, 1/3), size=None)
+            mask_technique = np.random.choice(['random', 'span_long'], p = (2/3,1/3), size=None) # Removed short_span because of bugs
             if mask_technique == 'span_short':
                 mask_num = 50
             return mask_num, mask_technique, change_percent
