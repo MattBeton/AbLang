@@ -155,7 +155,7 @@ def re_adjust_matrix(base_mask, attention_mask, mask_num):
     indices = torch.argmax(attention_mask * idx, 1, keepdim=True)
 
     for test_idx in indices.reshape(-1):
-        base_mask[:,test_idx - mask_num:attention_mask.shape[1]] = 0    
+        base_mask[:,test_idx - mask_num - 1:attention_mask.shape[1]] = 0    
     
     return base_mask
     
@@ -180,7 +180,7 @@ def get_indexes(
         idx = start_idx + step_idx
         
     elif mask_technique == 'span_short':        
-        span_lengths = np.random.choice([2, 3, 4], size=(10))
+        span_lengths = np.random.choice([2, 3, 4], size=(5))
         span_separation_lengths = torch.normal(mean=15, std=6, size=(10,)).int()
         span_separation_lengths = torch.where(torch.where(span_separation_lengths < 1, 1, span_separation_lengths) > 15, 15, span_separation_lengths)
 
