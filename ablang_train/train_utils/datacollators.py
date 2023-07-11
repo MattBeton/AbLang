@@ -52,7 +52,7 @@ class ABcollator():
         
         
         if self.mask_technique == 'mix':
-            mask_technique = np.random.choice(['random', 'span_long'], p = (2/3,1/3), size=None) # Removed short_span because of bugs
+            mask_technique = np.random.choice(['random', 'span_long', 'span_short'], p = (1/3, 1/3,1/3), size=None) # Removed short_span because of bugs
             if mask_technique == 'span_short':
                 mask_num = 50
             return mask_num, mask_technique, change_percent
@@ -67,7 +67,7 @@ class ABcollator():
         tkn_sequences = self.tokenizer(batch, w_extra_tkns=False, pad=True)
 
         mask_num, mask_technique, change_percent = self.get_mask_arguments(tkn_sequences)
-
+        #print(mask_num, mask_technique, change_percent)
         masked_sequences, target_tkns = generate_masked_sequences(
             tkn_sequences, 
             pad_tkn = self.pad_tkn,
@@ -137,7 +137,7 @@ def generate_masked_sequences(
 
 def get_allowed_mask(attention_mask, stop_start_mask, mask_technique, mask_num):
     
-    base_mask = (~(attention_mask + stop_start_mask)).float().clone()
+    base_mask = (~(attention_mask + stop_start_mask)).float()
     
     if mask_technique == 'random':
         return base_mask
@@ -146,17 +146,18 @@ def get_allowed_mask(attention_mask, stop_start_mask, mask_technique, mask_num):
         """
         Removes the end possible masks, so get_indexes doesn't mask things outside of the sequences.
         """
-        return re_adjust_matrix(base_mask, stop_start_mask, mask_num)
+        return re_adjust_matrix(base_mask, attention_mask, mask_num)
         
         
-def re_adjust_matrix(matrix, stop_start_mask, adjustment):
+def re_adjust_matrix(base_mask, attention_mask, mask_num):
 
-    test_idxs = (stop_start_mask.float()==1).nonzero()
+    idx = torch.arange(attention_mask.shape[1], 0, -1)
+    indices = torch.argmax(attention_mask * idx, 1, keepdim=True)
 
-    for test_idx in test_idxs:
-        matrix[test_idx[0],range(test_idx[1]-adjustment, test_idx[1])] = 0
-
-    return matrix
+    for test_idx in indices.reshape(-1):
+        base_mask[:,test_idx - mask_num:attention_mask.shape[1]] = 0    
+    
+    return base_mask
     
 
 def get_indexes(
@@ -173,6 +174,7 @@ def get_indexes(
         idx = torch.multinomial(allowed_mask.float(), num_samples=mask_num, replacement=False)
     
     elif mask_technique == 'span_long':
+
         start_idx = torch.multinomial(allowed_mask.float(), num_samples = 1, replacement = False).repeat(1, mask_num)
         step_idx = torch.linspace(0, mask_num-1, steps = mask_num, dtype = int).repeat(allowed_mask.shape[0], 1)
         idx = start_idx + step_idx
