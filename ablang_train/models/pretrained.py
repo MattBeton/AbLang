@@ -38,7 +38,7 @@ class pretrained:
     def unfreeze(self):
         self.AbLang.train()
         
-    def __call__(self, sequence, mode='seqcoding', align=False, splitSize=50):
+    def __call__(self, sequence, mode='seqcoding', align=False, chain ='H', chunk_size=50):
         """
         Mode: sequence, residue, restore or likelihood.
         """
@@ -49,8 +49,8 @@ class pretrained:
         
         
         aList = []
-        for sequence_part in [sequence[x:x+splitSize] for x in range(0, len(sequence), splitSize)]:
-            aList.append(getattr(self, mode)(sequence_part, align))
+        for sequence_part in [sequence[x:x+chunk_size] for x in range(0, len(sequence), chunk_size)]:
+            aList.append(getattr(self, mode)(sequence_part, align, chain))
         
         if mode == 'rescoding':
             if align==True:
@@ -60,21 +60,21 @@ class pretrained:
         
         return np.concatenate(aList)
     
-    def seqcoding(self, seqs, align=False):
+    def seqcoding(self, seqs, align=False, chain ='H'):
         """
         Sequence specific representations
         """
         
-        return self.encode_antibody.get_seq_coding(seqs, align)
+        return self.encode_antibody.get_seq_coding(seqs)
     
-    def restore(self, seqs, align=False):
+    def restore(self, seqs, align=False, chain ='H'):
         """
         Restore sequences
         """
 
         return self.restore_antibody.restore(seqs, align=align)
     
-    def likelihood(self, seqs, align=False):
+    def likelihood(self, seqs, align=False, chain ='H'):
         """
         Possible Mutations
         """
@@ -87,10 +87,10 @@ class pretrained:
 
         return predictions
     
-    def rescoding(self, seqs, align=False):
+    def rescoding(self, seqs, align=False, chain = 'H'):
         """
         Residue specific representations.
         """
            
-        return self.encode_antibody.get_res_coding(seqs, align)
+        return self.encode_antibody.get_res_coding(seqs, align=align, chain = chain)
         

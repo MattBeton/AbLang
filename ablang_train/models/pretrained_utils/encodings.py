@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
-from .extra_utils import get_number_alignment, create_alignment, res_to_list, res_to_seq
+from .extra_utils import paired_msa_numbering, ab_msa_numbering, create_alignment, res_to_list, res_to_seq
 
 
 class AbEncoding:
@@ -17,7 +17,7 @@ class AbEncoding:
         self.device = device
         self.ncpu = ncpu
         
-    def get_seq_coding(self, seqs, align=False):
+    def get_seq_coding(self, seqs, align=False, chain = 'H'):
         """
         Sequence specific representations
         """
@@ -39,32 +39,30 @@ class AbEncoding:
         
         return seq_codings
         
-    def get_res_coding(self, seqs, align=False):
+    def get_res_coding(self, seqs, align=False, chain = 'H'):
         """
         Residue specific representations.
         """
            
         if align:
             
-            import pandas as pd
-            import anarci
+            if chain == 'P':
+                anarci_out, seqs, number_alignment = paired_msa_numbering(seqs, self.ncpu)
+                
+            else:
+                anarci_out, seqs, number_alignment = ab_msa_numbering(seqs, chain = chain, ncpus = self.ncpu)
+                
             
-            anarci_out = anarci.run_anarci(
-                pd.DataFrame(seqs).reset_index().values.tolist(), 
-                ncpu=self.ncpu, 
-                scheme='imgt',
-                allowed_species=['human', 'mouse'],
-            )
-            number_alignment = get_number_alignment(anarci_out)
-            
-            seqs = np.array([''.join([i[1] for i in onarci[0][0]]).replace('-','') for onarci in anarci_out[1]])
-            
-            tokens = self.tokenizer(seqs, pad=True, device=self.device)
-            residue_states = self.AbRep(tokens).last_hidden_states
+            tokens = self.tokenizer(seqs, pad=True, w_extra_tkns=False, device=self.device)
+            with torch.no_grad():
+                residue_states = self.AbRep(tokens).last_hidden_states
             
             if torch.is_tensor(residue_states): residue_states = residue_states.cpu().detach().numpy()
             
-            residue_output = np.array([create_alignment(res_embed, oanarci, seq, number_alignment) for res_embed, oanarci, seq in zip(residue_states, anarci_out[1], seqs)])
+            residue_output = np.array([create_alignment(
+                res_embed, oanarci, seq, number_alignment
+            ) for res_embed, oanarci, seq in zip(residue_states, anarci_out, seqs)])
+            
             del residue_states
             del tokens
             

@@ -15,7 +15,7 @@ class RestoreAntibody:
         self.device = device
         self.ncpu = ncpu
 
-    def restore(self, seqs, align=False):
+    def restore(self, seqs, align=False, chain = 'H'):
         """
         Restore sequences
         """
