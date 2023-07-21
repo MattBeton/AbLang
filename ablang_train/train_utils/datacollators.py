@@ -187,7 +187,7 @@ def get_indexes(
         start_idx = torch.multinomial(allowed_mask.float(), num_samples = 1, replacement = False).repeat(1, mask_num)
         step_idx = torch.linspace(0, mask_num-1, steps = mask_num, dtype = int).repeat(allowed_mask.shape[0], 1)
         idx = start_idx + step_idx
-        idx = correct_idxs(idx, allowed_mask.shape[1]) 
+        idx = correct_idxs(idx, allowed_mask.shape[1] - 1) 
         
     elif mask_technique == 'span_short':        
         span_lengths = np.random.choice([2, 3, 4], size=(5))
@@ -205,7 +205,7 @@ def get_indexes(
             start_idx += lengths + separation
 
         idx = torch.concatenate(many_span_idx, axis=1)
-        idx = correct_idxs(idx, allowed_mask.shape[1])    
+        idx = correct_idxs(idx, allowed_mask.shape[1] - 1)    
         
     n_change = max(int(idx.shape[1]*change_percent), 1)
     n_leave  = max(int(idx.shape[1]*leave_percent ), 0)
