@@ -98,7 +98,7 @@ class PrepareArguments:
             self.args.precision = "16-mixed"  
             # You LR*(gradient/gpus), 
             # and therefore need to multiply your given LR with the number of gpus to get the effective LR
-            self.args.learning_rate = self.args.learning_rate / self.args.devices
+            self.args.learning_rate = self.args.learning_rate * self.args.devices
             
             if self.args.devices > 1: self.args.strategy = "ddp" #DDPPlugin() # find_unused_parameters=False 
         
