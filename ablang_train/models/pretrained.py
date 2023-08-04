@@ -58,7 +58,7 @@ class pretrained:
             
             return sum(aList, [])
         
-        return np.concatenate(aList)
+        return torch.cat(aList)
     
     def seqcoding(self, seqs, align=False, chain ='H'):
         """
@@ -79,11 +79,10 @@ class pretrained:
         Possible Mutations
         """
         
-        tokens = self.tokenizer(seqs, pad=True, device=self.used_device)
+        tokens = self.tokenizer(seqs, pad=True, w_extra_tkns=False, device=self.used_device)
         
-        predictions = self.AbLang(tokens)[:,:,1:21]
-        
-        if torch.is_tensor(predictions): predictions = predictions.cpu().detach().numpy()
+        with torch.no_grad():
+            predictions = self.AbLang(tokens)
 
         return predictions
     
@@ -92,5 +91,5 @@ class pretrained:
         Residue specific representations.
         """
            
-        return self.encode_antibody.get_res_coding(seqs, align=align, chain = chain)
+        return self.encode_antibody.get_res_coding(seqs, align = align, chain = chain)
         
