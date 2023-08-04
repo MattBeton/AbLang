@@ -42,7 +42,7 @@ class AbDataModule(pl.LightningDataModule):
             mask_percent = .15,
             mask_variable = self.data_hparams.variable_masking,
             cdr3_focus = 1.,
-            mask_technique = "random",
+            mask_technique = "shotgun",
             change_percent = .1,
             leave_percent = .1,
         )

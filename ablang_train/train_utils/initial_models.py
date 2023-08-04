@@ -20,7 +20,7 @@ class AbLangPaired_v1(pl.LightningModule):
         
         parser.add_argument('--mask_percent', type=float, default=.15, help='Percentage to mask.')
         parser.add_argument('--variable_masking', type=strtobool, default=False, help='Random uniform masking between 0 and mask_percent for each batch.')
-        parser.add_argument('--mask_technique', type=str, default="random", help='masking technique to use. {standard, standard-sl_mask}')
+        parser.add_argument('--mask_technique', type=str, default="shotgun", help='masking technique to use. {standard, standard-sl_mask}')
         parser.add_argument('--change_percent', type=float, default=.1, help='Change percent.')
         parser.add_argument('--leave_percent', type=float, default=.1, help='Leave percent.')
         
