@@ -51,9 +51,9 @@ class AbDataModule(pl.LightningDataModule):
         self.val = self.get_data(file_path=os.path.join(self.data_hparams.eval_path,'eval_data'))[:1000]
         
     def train_dataloader(self):
-        return DataLoader(self.train, 
-                          batch_size=self.data_hparams.train_batch_size, 
-                          collate_fn=self.traincollater, 
+        return DataLoader(self.train,
+                          batch_size=self.data_hparams.train_batch_size,
+                          collate_fn=self.traincollater,
                           num_workers=self.data_hparams.cpus,
                           shuffle=True,
                           pin_memory=True,
