@@ -38,18 +38,28 @@ class pretrained:
     def unfreeze(self):
         self.AbLang.train()
         
-    def __call__(self, sequence, mode='seqcoding', align=False, chain ='H', chunk_size=50):
+    def __call__(self, seqs, mode='seqcoding', align=False, chain ='H', chunk_size=50):
         """
         Mode: sequence, residue, restore or likelihood.
         """
         if not mode in ['rescoding', 'seqcoding', 'restore', 'likelihood']:
             raise SyntaxError("Given mode doesn't exist.")
         
-        if isinstance(sequence, str): sequence = [sequence]
+        if isinstance(seqs, str): seqs = [seqs]
         
+        
+        if mode == 'likelihood':
+            
+            tokens = self.tokenizer(seqs, pad=True, w_extra_tkns=False, device=self.used_device)
+            aList = []
+            for sequence_part in [tokens[x:x+chunk_size] for x in range(0, len(tokens), chunk_size)]:
+                aList.append(getattr(self, mode)(sequence_part, align, chain))
+                
+            return torch.cat(aList)
+                
         
         aList = []
-        for sequence_part in [sequence[x:x+chunk_size] for x in range(0, len(sequence), chunk_size)]:
+        for sequence_part in [seqs[x:x+chunk_size] for x in range(0, len(seqs), chunk_size)]:
             aList.append(getattr(self, mode)(sequence_part, align, chain))
         
         if mode == 'rescoding':
@@ -74,12 +84,10 @@ class pretrained:
 
         return self.restore_antibody.restore(seqs, align=align)
     
-    def likelihood(self, seqs, align=False, chain ='H'):
+    def likelihood(self, tokens, align=False, chain ='H'):
         """
         Possible Mutations
         """
-        
-        tokens = self.tokenizer(seqs, pad=True, w_extra_tkns=False, device=self.used_device)
         
         with torch.no_grad():
             predictions = self.AbLang(tokens)
