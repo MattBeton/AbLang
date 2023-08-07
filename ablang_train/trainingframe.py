@@ -37,6 +37,14 @@ class TrainingFrame(pl.LightningModule):
             use_moe = self.hparams.use_moe,
         )
         self.ablang.apply(self._init_weights) # Initialize weights
+        if self.hparams.path_start_weights != None:
+            self.ablang.load_state_dict(
+                torch.load(
+                    os.path.join(self.hparams.path_start_weights, 'model.pt'), 
+                    map_location = torch.device(self.device)
+                )
+            )
+        
         self.run_evaluations = Evaluations(self.tokenizer, self.hparams) # Initialize evaluations  
         
         self.validation_step_outputs = []

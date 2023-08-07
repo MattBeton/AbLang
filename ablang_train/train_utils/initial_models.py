@@ -39,6 +39,7 @@ class AbLangPaired_v1(pl.LightningModule):
         parser.add_argument("--data_path", type=str, default='../data/feb2022_5_data')
         parser.add_argument('--out_path', type=str, default="/data/iraqbabbler/olsen/Documents/projects/AbLang/model-catalogue/paired-ablang/train_ablang_pair/reports/models")
         parser.add_argument('--eval_path', type=str, default="/vols/bitbucket/olsen/processed_oas_data/nov2022/nov2022-paired-all/")
+        parser.add_argument('--path_start_weights', type=str, default=None)
         
         parser.add_argument('--cpus', type=int, default=1, help='Number of cpus to use on data handling (4xGPUs is the recommended). \
                                                                     0 uses the main process to load the data.')
