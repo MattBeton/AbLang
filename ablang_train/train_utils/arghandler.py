@@ -81,10 +81,37 @@ class PrepareArguments:
         
         if accumulate_size > 1: 
             # Adjust val_check, n_log and training_steps
-            self.args.val_check_interval = int(self.args.val_check_interval * accumulate_size) 
+            proposed_val_check = int(self.args.val_check_interval * accumulate_size)
             self.args.log_every_n_steps = int(self.args.log_every_n_steps * accumulate_size) 
             #self.args.num_training_steps = int(self.args.num_training_steps * accumulate_size)
+            
+            # Store the proposed val_check_interval for potential adjustment after data loading
+            self.args._proposed_val_check_interval = proposed_val_check
+        else:
+            self.args._proposed_val_check_interval = self.args.val_check_interval
+    
+    def adjust_validation_interval_for_dataset_size(self, num_train_batches):
+        """
+        Call this after knowing the actual number of training batches to adjust validation interval
+        """
+        proposed_val_check = getattr(self.args, '_proposed_val_check_interval', self.args.val_check_interval)
         
+        if num_train_batches <= 1:
+            # Very small dataset: validate every epoch or disable validation
+            print(f"Warning: Very small dataset with only {num_train_batches} training batch(es).")
+            print("Setting validation to run every epoch instead of step-based validation.")
+            # Use epoch-based validation instead of step-based
+            self.args.val_check_interval = None  # This will make it validate every epoch
+            self.args.check_val_every_n_epoch = 1  # Validate every epoch
+        elif proposed_val_check > num_train_batches:
+            # Proposed interval too large: cap it at number of batches
+            self.args.val_check_interval = num_train_batches
+            print(f"Warning: Proposed val_check_interval ({proposed_val_check}) > num_train_batches ({num_train_batches})")
+            print(f"Adjusted val_check_interval to {num_train_batches}")
+        else:
+            # Use the proposed interval
+            self.args.val_check_interval = proposed_val_check
+    
     def set_device_arguments(self):
         """
         Hyparameters scale weirdly with gpus. This function is to adjust them based on gpu_counts.
@@ -117,7 +144,7 @@ class PrepareArguments:
         trainer_args = {}
         trainer_keys = [
             'accelerator', 'devices', 'precision', 'strategy',
-            'val_check_interval', 'enable_checkpointing', 
+            'val_check_interval', 'check_val_every_n_epoch', 'enable_checkpointing', 
             'default_root_dir', 'max_steps', 'accumulate_grad_batches', 
         ]
 

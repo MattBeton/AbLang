@@ -62,13 +62,27 @@ if __name__ == '__main__':
     enforce_reproducibility(arguments.model_specific_args.seed)
     
     # LOAD AND INITIATE DATA
-    ablang_dm = AbDataModule(arguments.model_specific_args, ABtokenizer) 
+    ablang_dm = AbDataModule(arguments.model_specific_args, ABtokenizer)
     
     # You are supposed to just be able to add abrep to the fit function, but it doesn't work when using multiple GPUs
     ablang_dm.setup('fit')
 
     train = ablang_dm.train_dataloader()
     val = ablang_dm.val_dataloader()
+    
+    # Adjust validation interval based on actual dataset size
+    num_train_batches = len(train)
+    print(f"Dataset info: {num_train_batches} training batches, {len(val)} validation batches")
+    
+    # Create a temporary PrepareArguments instance to call the adjustment method
+    from ablang_train.train_utils.arghandler import PrepareArguments
+    temp_args_handler = PrepareArguments(arguments.model_specific_args)
+    temp_args_handler.adjust_validation_interval_for_dataset_size(num_train_batches)
+    
+    # Update trainer args with the adjusted validation settings
+    arguments.trainer_args['val_check_interval'] = getattr(arguments.model_specific_args, 'val_check_interval', None)
+    if hasattr(arguments.model_specific_args, 'check_val_every_n_epoch'):
+        arguments.trainer_args['check_val_every_n_epoch'] = arguments.model_specific_args.check_val_every_n_epoch
     
     # LOAD MODEL
     model = TrainingFrame(arguments.model_specific_args, AbLang, ABtokenizer)
