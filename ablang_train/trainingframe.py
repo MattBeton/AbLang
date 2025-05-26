@@ -95,13 +95,10 @@ class TrainingFrame(pl.LightningModule):
         main_loss = self.loss_fn(logits.view(-1, self.hparams.vocab_size), labels_flat)
         total_loss = main_loss + aux_loss
 
-        # Log total loss (before accumulation scaling)
-        # Matches the condition and name from the original logging for train_loss
-        if (batch_idx % self.hparams.accumulate_grad_batches) == 0: 
-            self.log("evaluation/train_loss", total_loss.item(), on_step=True, on_epoch=False, prog_bar=True, logger=True)
-            
-            if (batch_idx % 10) == 0: # Original cache clearing condition was also inside this block
-                torch.cuda.empty_cache()
+        self.log("evaluation/train_loss", total_loss.item(), on_step=True, on_epoch=False, prog_bar=True, logger=True)
+        
+        if (batch_idx % 10) == 0: # Original cache clearing condition was also inside this block
+            torch.cuda.empty_cache()
 
         # Manual backward pass: scale loss for accumulation
         scaled_loss = total_loss / self.hparams.accumulate_grad_batches
@@ -144,6 +141,14 @@ class TrainingFrame(pl.LightningModule):
         loss_heavy, perplexity_heavy = self.run_evaluations.loss_n_perplexity.calculate_perplexity_fast(self, heavy)
         loss_light, perplexity_light = self.run_evaluations.loss_n_perplexity.calculate_perplexity_fast(self, light)
         
+        # Log validation metrics using PyTorch Lightning's logging system
+        self.log('val_loss', loss, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True)
+        self.log('perplexity', perplexity, on_step=False, on_epoch=True, sync_dist=True)
+        self.log('val_loss_h', loss_heavy, on_step=False, on_epoch=True, sync_dist=True)
+        self.log('perplexity_h', perplexity_heavy, on_step=False, on_epoch=True, sync_dist=True)
+        self.log('val_loss_l', loss_light, on_step=False, on_epoch=True, sync_dist=True)
+        self.log('perplexity_l', perplexity_light, on_step=False, on_epoch=True, sync_dist=True)
+        
         self.validation_step_outputs.append({
             'val_loss': loss, 'perplexity':perplexity, 
             'val_loss_h': loss_heavy, 'perplexity_h':perplexity_heavy,
@@ -157,28 +162,13 @@ class TrainingFrame(pl.LightningModule):
     
     
     def on_validation_epoch_end(self): # Updated once when validation is called
-                
-        perplexity = torch.stack([x['perplexity'] for x in self.validation_step_outputs]).mean() # mean across each batch
-        self.logger.experiment["evaluation/perplexity"].log(float(perplexity.item()))
         
-        val_loss = torch.stack([x['val_loss'] for x in self.validation_step_outputs]).mean()
-        self.logger.experiment["evaluation/val_loss"].log(float(val_loss.item()))
+        # The metrics are now automatically logged by PyTorch Lightning via self.log()
+        # in validation_step, so we don't need manual Neptune logging here anymore
         
-        perplexity = torch.stack([x['perplexity_h'] for x in self.validation_step_outputs]).mean() # mean across each batch
-        self.logger.experiment["evaluation/perplexity_h"].log(float(perplexity.item()))
-        
-        val_loss = torch.stack([x['val_loss_h'] for x in self.validation_step_outputs]).mean()
-        self.logger.experiment["evaluation/val_loss_h"].log(float(val_loss.item()))
-        
-        perplexity = torch.stack([x['perplexity_l'] for x in self.validation_step_outputs]).mean() # mean across each batch
-        self.logger.experiment["evaluation/perplexity_l"].log(float(perplexity.item()))
-        
-        val_loss = torch.stack([x['val_loss_l'] for x in self.validation_step_outputs]).mean()
-        self.logger.experiment["evaluation/val_loss_l"].log(float(val_loss.item()))
-        
+        # Still run custom evaluations (plots, etc.)
         self.run_evaluations(self)
         self.validation_step_outputs.clear()  # free memory
-        
 
     
     def configure_optimizers(self):
