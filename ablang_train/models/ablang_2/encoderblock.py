@@ -140,7 +140,8 @@ class MultiHeadAttention(torch.nn.Module):
         batch_size, seq_len, embed_dim = x.size()
         
         q, k, v = self.q_proj(x), self.k_proj(x), self.v_proj(x)
-        q *= self.scaling ## WHY DO WE DO THIS?????
+        # q *= self.scaling ## WHY DO WE DO THIS?????
+        q = q * self.scaling ## WHY DO WE DO THIS?????
         
         q = q.contiguous().view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2) # [n_batch, n_heads, seq_len, head_dim]
         k = k.contiguous().view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2) # [n_batch, n_heads, seq_len, head_dim]

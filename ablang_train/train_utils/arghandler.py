@@ -95,7 +95,8 @@ class PrepareArguments:
         self._set_n_accummulated_grad_batches()
         
         if self.args.accelerator == 'cuda':
-            self.args.precision = "16-mixed"  
+            # self.args.precision = "16-mixed"  
+            self.args.precision = "32"
             # You LR*(gradient/gpus), 
             # and therefore need to multiply your given LR with the number of gpus to get the effective LR
             self.args.learning_rate = self.args.learning_rate * self.args.devices
@@ -132,8 +133,8 @@ class PrepareArguments:
         """
 
         neptune_args = { 
-            'api_key':"eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI0N2Y2YmIxMS02OWM3LTRhY2MtYTQxOC0xODU5N2E0ODFmMzEifQ==",
-            'project':"tobiasheol/AbLangTraining",
+            'api_key':"eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiIxNDcwNDMwZC0yOTkyLTQ1Y2UtYTg5Yi0xNzk5Y2NkOGFiNWUifQ==",
+            'project':"exo/ABLangSweep",
             'name':name,
             'log_model_checkpoints':False,
         }
