@@ -1,0 +1,10 @@
+data/out/
+lfs/
+lfs/
+notebooks/
+reports/
+.neptune/
+*/__pycache__/
+ablang_train/__pycache__/
+*.pyc
+*/.DS_Store

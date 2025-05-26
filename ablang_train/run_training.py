@@ -1,4 +1,5 @@
 import os
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 import numpy as np
 import pandas as pd
 
@@ -6,6 +7,7 @@ import torch
 import pytorch_lightning as pl
 
 from ablang_train import ABtokenizer, AbLang, TrainingFrame, CallbackHandler, AbDataModule, ablang_parse_args
+from pytorch_lightning.callbacks import OnExceptionCheckpoint
 
     
 def enforce_reproducibility(seed=42):
@@ -24,10 +26,23 @@ def enforce_reproducibility(seed=42):
     pl.seed_everything(seed)
 
 if __name__ == '__main__':
-    
+    torch.set_float32_matmul_precision('high')
     
     # SET ARGUMENTS AND HPARAMS
     arguments = ablang_parse_args()
+    # print(arguments)
+
+    # If manual optimization is used, Trainer's accumulate_grad_batches should be 1 (or None/default)
+    # as accumulation is handled inside the LightningModule's training_step.
+    # The model_specific_args.accumulate_grad_batches will still be used by the manual logic.
+    if hasattr(arguments.model_specific_args, 'manual_optimization') and arguments.model_specific_args.manual_optimization or True:
+        arguments.trainer_args['accumulate_grad_batches'] = 1 
+    elif 'accumulate_grad_batches' in arguments.trainer_args and arguments.trainer_args.get('accelerator') == 'mps': # Temp fix for MPS issue with auto accum.
+        # Check if manual optimization is implied by TrainingFrame setting
+        # This part is tricky as TrainingFrame.automatic_optimization is set instance-level
+        # A cleaner way would be to have a hparam that explicitly states manual optimization is on.
+        # For now, assuming if we reach here, manual opt is active due to prior changes.
+        arguments.trainer_args['accumulate_grad_batches'] = 1
 
     # SET CALLBACKS
     callbacks = CallbackHandler(
@@ -35,6 +50,13 @@ if __name__ == '__main__':
         progress_refresh_rate=0, 
         outpath=arguments.model_specific_args.out_path
     )
+    
+    # Add exception checkpoint callback for saving on Ctrl+C
+    exception_callback = OnExceptionCheckpoint(
+        dirpath=arguments.model_specific_args.out_path,
+        filename="interrupted_checkpoint"
+    )
+    all_callbacks = callbacks() + [exception_callback]
     
     # SET SEED - IMPORTANT FOR MULTIPLE GPUS, OTHERWISE GOOD FOR REPRODUCIBILITY
     enforce_reproducibility(arguments.model_specific_args.seed)
@@ -52,7 +74,8 @@ if __name__ == '__main__':
     model = TrainingFrame(arguments.model_specific_args, AbLang, ABtokenizer)
 
     # INITIALISE TRAINER
-    trainer = pl.Trainer(**arguments.trainer_args, callbacks=callbacks())
+    print(arguments.trainer_args)
+    trainer = pl.Trainer(**arguments.trainer_args, callbacks=all_callbacks)
 
     # TRAIN MODEL
     trainer.fit(model, train, val)
